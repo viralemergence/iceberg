@@ -13,6 +13,7 @@ projection(blank) <- CRS("+proj=longlat +datum=WGS84")
 
 # Dispersal script
 
+Dispersals <- read.csv("data/Data for dispersal.csv", header = T)
 disp <- Dispersals %>% filter(!is.na(Scientific_name))
 
 RasterSp <- list.files("IceMaps") %>% str_split(" ") %>% map(1) %>% sapply(function(a) a[1]) %>% sort
@@ -23,11 +24,11 @@ all(disp$Scientific_name %in% RasterSp)
 t1 <- Sys.time()
 
 i = 1
-j = 2
+j = length(RasterSp)
 
 mclapply(RasterSp[i:j], function(a){
   
-  testraster <- raster(paste0('IceMaps/',a,' .tif'))
+  testraster <- raster(paste0('IceMaps/',a,' .tif')) # CAREFUL OF SPACE BEFORE PERIOD
   
   testraster <- raster::resample(testraster, blank, method = 'ngb')
   dk <- disp[disp$Scientific_name == a, 'disp50']
