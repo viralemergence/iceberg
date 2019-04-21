@@ -6,7 +6,7 @@ library(parallel)
 
 ### fix blank
 
-blank <- matrix(0,720,360)
+blank <- matrix(0,360,720)
 blank <- raster(blank)
 extent(blank) <- c(-180,180,-90,90)
 projection(blank) <- CRS("+proj=longlat +datum=WGS84")
@@ -14,9 +14,18 @@ projection(blank) <- CRS("+proj=longlat +datum=WGS84")
 # Dispersal script
 
 Dispersals <- read.csv("data/Data for dispersal.csv", header = T)
-disp <- Dispersals %>% filter(!is.na(Scientific_name))
+disp <- Dispersals %>% filter(!is.na(Scientific_name), !is.na(disp50))
+disp$Scientific_name <- disp$Scientific_name %>% str_replace(" ", "_")
 
-RasterSp <- list.files("IceMaps") %>% str_split(" ") %>% map(1) %>% sapply(function(a) a[1]) %>% sort
+RasterSp <- list.files("IceMaps") %>% 
+  str_split(" ") %>% map(1) %>% 
+  sapply(function(a) a[1]) %>% sort %>% 
+  intersect(disp$Scientific_name)
+
+NoDispSp <- list.files("IceMaps") %>% 
+  str_split(" ") %>% map(1) %>% 
+  sapply(function(a) a[1]) %>% sort %>% 
+  setdiff(disp$Scientific_name)
 
 all(RasterSp%in%disp$Scientific_name)
 all(disp$Scientific_name %in% RasterSp)
@@ -35,8 +44,29 @@ mclapply(RasterSp[i:j], function(a){
   buff <- buffer(testraster, dk)
   writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
   
-}, mc.cores = 20)
+}, mc.cores = 70)
 
 t2 <- Sys.time()
 
 t2 - t1
+
+Success <- list.files("PostDispersal") %>% str_split(".tif") %>% map(1) %>% unlist
+Fail <- setdiff(RasterSp, Success)
+
+mclapply(Fail, function(a){
+  
+  testraster <- raster(paste0('IceMaps/',a,' .tif')) # CAREFUL OF SPACE BEFORE PERIOD
+  
+  testraster <- raster::resample(testraster, blank, method = 'ngb')
+  dk <- disp[disp$Scientific_name == a, 'disp50']
+  buff <- buffer(testraster, dk)
+  writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
+  
+}, mc.cores = 70)
+
+a = sample(Success, 1)
+r1 <- raster(paste0('IceMaps/',a,' .tif')) # CAREFUL OF SPACE BEFORE PERIOD
+r2 <- raster(paste0('PostDispersal/',a,'.tif')) # CAREFUL OF SPACE BEFORE PERIOD
+
+plot(r2)
+plot(r1, add = T, fill = "red")
