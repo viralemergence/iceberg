@@ -62,7 +62,7 @@ mclapply(Fail, function(a){
   buff <- buffer(testraster, dk)
   writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
   
-}, mc.cores = 70)
+}, mc.cores = 6)
 
 a = sample(Success, 1)
 r1 <- raster(paste0('IceMaps/',a,' .tif')) # CAREFUL OF SPACE BEFORE PERIOD
@@ -70,3 +70,16 @@ r2 <- raster(paste0('PostDispersal/',a,'.tif')) # CAREFUL OF SPACE BEFORE PERIOD
 
 plot(r2)
 plot(r1, add = T, fill = "red")
+
+# Checking it's all worked ####
+# Ironically this doesn't work lol ####
+
+PreDispList <- lapply(list.files("IceMaps")[1:50], function(a) raster(paste0("IceMaps/",a)))
+PostDispList <- lapply(list.files("PostDispersal")[1:50], function(a) raster(paste0("PostDispersal/",a)))
+
+PreSizes <- sapply(PreDispList[1:50], function(a) length(na.omit(values(a))))
+PostSizes <- sapply(PostDispList[1:50], function(a) length(na.omit(values(a))))
+
+PreSizes>=PostSizes
+
+
