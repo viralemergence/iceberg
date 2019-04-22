@@ -1,4 +1,5 @@
 
+
 # Parsing Cory's maps ####
 
 library(velox);
@@ -6,7 +7,7 @@ library(sf); library(fasterize); library(Matrix);library(ggplot2);
 library(ggregplot); library(raster); library(tidyverse); library(igraph); 
 library(maptools); library(SpRanger)
 
-Files <- list.files("~/IcebergRasters")
+Files <- list.files("IceMaps")
 
 table(table(Files))
 
@@ -16,18 +17,12 @@ substr(UpperFiles, 1,1) <- substr(UpperFiles, 1,1) %>% toupper()
 write.csv(Files %>% str_replace("_", " "), file = "SpNames_Unedited.csv")
 write.csv(UpperFiles %>% str_replace("_", " "), file = "SpNames_Upper.csv")
 
-ToRemove <- Files[which(sapply(Files, function(a) length(list.files(paste("~/IcebergRasters", a, sep = '/'))))==0)]
-
-file.remove(paste("~/IcebergRasters", ToRemove, sep = '/'))
-
-Files <- setdiff(Files, ToRemove)
-
 #Files <- unique(Files)
 
 VeloxList <- lapply(Files, function(a){
   print(which(Files==a))
   print(a)
-  r1 <- velox(list.files(paste("~/IcebergRasters", a, sep = '/'), full.names = TRUE)[1])
+  r1 <- velox(paste("IceMaps", a, sep = '/'))
 })
 
 RasterLista <- lapply(1:length(VeloxList), function(a){
@@ -38,6 +33,36 @@ RasterLista <- lapply(1:length(VeloxList), function(a){
   
 })
 
+# Using resample (quicker but maybe doesn't actually work??) ####
+
+### fix blank
+
+blank <- matrix(0,360,720)
+blank <- raster(blank)
+extent(blank) <- c(-180,180,-90,90)
+projection(blank) <- CRS("+proj=longlat +datum=WGS84")
+
+RasterListb <- lapply(1:length(RasterLista), function(a){
+  
+  print(a)
+  
+  testraster <- RasterLista[[a]]
+  testraster <- raster::resample(testraster, blank, method = 'ngb')
+  
+})
+
+RasterBrick <- raster::brick(RasterListb)
+names(RasterBrick) <- Files %>% str_remove(".tif$")
+
+# Colin says don't do this: crs(RasterBrick) <- "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
+
+RasterBrick2 <- projectRaster(RasterBrick, crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs", 
+                             method = "bilinear")
+
+IcebergAdj <- PairsWisely(RasterBrick2)
+
+# Using rastertopolygons and SF package (which definitely works but takes ages) ####
+
 RasterListb <- lapply(1:length(RasterLista), function(a){
   
   print(Files[a])
@@ -46,15 +71,10 @@ RasterListb <- lapply(1:length(RasterLista), function(a){
   
 })
 
-Files <- Files[RasterListb[-which(sapply(RasterListb, length)==0)]]
-RasterListb <- RasterListb[-which(sapply(RasterListb, length)==0)]
-
 RasterListc <- st_as_sf(bind(RasterListb))
 
 RasterListc <- st_transform(RasterListc, 
                               "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs") # Mollweide projection 
-
-# plot(RasterListc[,"Binomial"])
 
 UpperFiles <- Files
 substr(UpperFiles, 1,1) <- substr(UpperFiles, 1,1) %>% toupper()
@@ -65,6 +85,7 @@ IcebergRaster <- raster(RasterListc, res = 25000)
 
 RasterBrick <- fasterize(RasterListc, IcebergRaster, by = "Binomial")
 
+# The next stage ####
 IcebergAdj <- PairsWisely(RasterBrick)
 
 save(IcebergAdj, file = "IcebergRangeAdj.Rdata")
@@ -72,7 +93,7 @@ save(RasterBrick, file = "IcebergRasterBrick.Rdata")
 
 load("data/FullRangeOverlap.Rdata")
 
-IUCN_ENM_Sp <- intersect(rownames(FullRangeAdj), UpperFiles)
+IUCN_ENM_Sp <- intersect(rownames(FullRangeAdj), rownames(IcebergAdj))
 
 SuboverlapIUCN <- FullRangeAdj[IUCN_ENM_Sp,IUCN_ENM_Sp]
 SuboverlapENM <- IcebergAdj[IUCN_ENM_Sp,IUCN_ENM_Sp]
@@ -197,4 +218,4 @@ FinalSpeciesList <- reduce(list(rownames(FullSTMatrix),
 
 length(FinalSpeciesList)
 
-write.csv(FinalSpeciesList, file = "OwO.csv")
+write.csv(FinalSpeciesList, file = "FinalSpeciesList.csv")
