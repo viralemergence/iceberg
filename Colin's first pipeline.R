@@ -58,8 +58,18 @@ s <- sum(s,blank,na.rm=FALSE)
 library(rasterVis); library(maps)
 colors <- colorRampPalette(brewer.pal(8,"YlGnBu"))
 levelplot(s, col.regions=colors, margin=FALSE,
-          main='Mammal richness')
+          main='Mammal richness',ylim=c(-70,90))
 
 #########
 
-overlaps <- SpRanger::PairsWisely(RasterBrick)
+AllSumsCur2 <- AllSumsCur[rownames(AllSumsCur) %in% rownames(AllSumsFut),
+                          colnames(AllSumsCur) %in% colnames(AllSumsFut)]
+Raster2 <- RasterBrick[[names(RasterBrick)[names(RasterBrick) %in% rownames(AllSumsFut)]]]
+
+rs <- rowSums(AllSumsFut)
+Raster3 <- Raster2*rs
+Raster4 <- Raster3/ncol(AllSumsFut)
+
+sums <- sum(Raster3, na.rm = TRUE)
+means1 <- sums/s; plot(means1)
+means2 <- mean(Raster3, na.rm = TRUE)
