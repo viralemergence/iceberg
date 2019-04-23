@@ -34,7 +34,7 @@ for(x in 1:length(PredReps)){
   
   Method = "resample"
   
-  if(Method = "resample"){
+  if(Method == "resample"){
     
     # Using resample (quicker but maybe doesn't actually work??) ####
     
