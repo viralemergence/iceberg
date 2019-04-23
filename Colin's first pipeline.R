@@ -39,12 +39,6 @@ RasterBrick <- raster::brick(RasterListb)
 names(RasterBrick) <- shortnames %>% str_remove(".tif$")
 s <- sum(RasterBrick,na.rm = FALSE)
 
-library(rasterVis); library(maps)
-colors <- colorRampPalette(brewer.pal(10,"YlGn"))
-levelplot(s, col.regions=colors)
-map('world',add=TRUE)
-
-
 ########## 
 
 library(ncdf4); setwd("D:/ICEBERG")
@@ -55,5 +49,17 @@ get <- function(varname) {
   raster::extent(slice) <- c(-180,180,-90,90)
   return(slice)
 }
-lutypes <- names(ncin$var)[1]
-landuse2017 <- stack(lapply(lutypes,get))
+blank <- get(names(ncin$var)[1])*0; plot(blank)
+
+###########
+
+s <- sum(s,blank,na.rm=FALSE)
+
+library(rasterVis); library(maps)
+colors <- colorRampPalette(brewer.pal(8,"YlGnBu"))
+levelplot(s, col.regions=colors, margin=FALSE,
+          main='Mammal richness')
+
+#########
+
+overlaps <- SpRanger::PairsWisely(RasterBrick)
