@@ -27,6 +27,8 @@ NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
 # PredReps <- c("Currents", paste0("Futures", 1:4))
 # names(IcebergAdjList) <- PredReps[1]
 
+rownames(IcebergAdjList[[2]]) <- colnames(IcebergAdjList[[2]]) <- rownames(IcebergAdjList[[2]]) %>% str_replace("[.]", "_")
+
 CORES = 1
 
 for(x in 1:length(IcebergAdjList)){
@@ -176,3 +178,37 @@ MatrixPoints(PredNetworkList[[1]],
 
 
 DeltaSharingList <- list()
+
+# Comparing currents and futures ####
+
+
+AllMammals2 <- reduce(list(rownames(FullSTMatrix), 
+                           rownames(IcebergAdjList[[1]]), 
+                           rownames(IcebergAdjList[[2]])), 
+                      intersect) %>% 
+  setdiff(NonEutherianSp) %>% 
+  sort()
+
+AllMammalMatrix <- data.frame(
+  Sp = as.character(rep(AllMammals2,each = length(AllMammals2))),
+  Sp2 = as.character(rep(AllMammals2,length(AllMammals2))),
+  SpaceCurrent = c(IcebergAdjList[[1]][AllMammals2,AllMammals2]),
+  SpaceFuture = c(IcebergAdjList[[2]][AllMammals2,AllMammals2]),
+  Phylo = c(tFullSTMatrix[AllMammals2,AllMammals2])
+) %>% 
+  mutate(Phylo = (Phylo - min(Phylo))/max(Phylo - min(Phylo)),
+         Gz = as.numeric(SpaceCurrent==0&SpaceFuture==0)) %>% droplevels
+
+UpperMammals <- which(upper.tri(FullSTMatrix[AllMammals2, AllMammals2], diag = T))
+
+AllMammaldf2 <- AllMammalMatrix[-UpperMammals,]
+
+DeltaSharing <- PredNetworkList[[2]][AllMammals2, AllMammals2] - PredNetworkList[[1]][AllMammals2, AllMammals2]
+
+AllMammaldf2$DeltaSharing <- c(DeltaSharing[-UpperMammals,])
+
+AllMammaldf2 %>% filter(Gz==0) %>% ggplot(aes(DeltaSharing)) + geom_density()
+
+AllMammaldf2 %>% filter(SpaceCurrent==0&SpaceFuture==1) %>% select(Sp, Sp)
+
+
