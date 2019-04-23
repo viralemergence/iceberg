@@ -1,6 +1,8 @@
 # Iceberg Prediction ####
 
-library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(MCMCglmm)
+library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(MCMCglmm); library(SpRanger)
+
+PredNetworkList <- list()
 
 load("Output Files/BAMList.Rdata")
 
@@ -21,9 +23,9 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
 
-IcebergAdjList <- list(CurrentAdj) #, FutureAdj1) #, FutureAdj2, FutureAdj3, FutureAdj4)
-PredReps <- c("Currents", paste0("Futures", 1:4))
-names(IcebergAdjList) <- PredReps[1]
+# IcebergAdjList <- list(CurrentAdj) #, FutureAdj1) #, FutureAdj2, FutureAdj3, FutureAdj4)
+# PredReps <- c("Currents", paste0("Futures", 1:4))
+# names(IcebergAdjList) <- PredReps[1]
 
 CORES = 1
 
@@ -158,8 +160,19 @@ for(x in 1:length(IcebergAdjList)){
     
     AllSums <- as(AssMat, "dgCMatrix")
     
-    save(AllSums, file = paste0(FileLoc,"/AllSums.Rdata"))
+    save(AllSums, file = paste0(FileLoc,"/", PredReps[x], "AllSums.Rdata"))
     
   }
   
+  PredNetworkList[[x]] <- AllSums
+  
 }
+
+MatrixPoints(PredNetworkList[[1]], 
+             PredNetworkList[[2]], 
+             Names = AllMammals[1:1000], 
+             Axes = c("Current", "Future")) + 
+  coord_fixed()
+
+
+DeltaSharingList <- list()
