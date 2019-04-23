@@ -2,6 +2,8 @@
 
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(MCMCglmm)
 
+load("Output Files/BAMList.Rdata")
+
 tFullSTMatrix <- 1 - (FullSTMatrix - min(FullSTMatrix))/max(FullSTMatrix)
 
 NonEutherians <- c("Diprotodontia",
@@ -19,15 +21,15 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
 
-IcebergAdjList <- list(CurrentAdj, FutureAdj1) #, FutureAdj2, FutureAdj3, FutureAdj4)
+IcebergAdjList <- list(CurrentAdj) #, FutureAdj1) #, FutureAdj2, FutureAdj3, FutureAdj4)
 PredReps <- c("Currents", paste0("Futures", 1:4))
-names(IcebergAdjList) <- PredReps[1:2]
+names(IcebergAdjList) <- PredReps[1]
 
 CORES = 1
 
 for(x in 1:length(IcebergAdjList)){
   
-  FileLoc <- paste0("Iceberg Output Files", PredReps[1])
+  FileLoc <- paste0("Iceberg Output Files/", PredReps[1])
   
   FullRangeAdj <- IcebergAdjList[[x]]
   
@@ -50,8 +52,6 @@ for(x in 1:length(IcebergAdjList)){
   
   N = nrow(AllMammaldf)
   
-  load("Output Files/BAMList.Rdata")
-  
   SpCoefNames <- names(BAMList[[1]]$coef)[substr(names(BAMList[[1]]$coef),1,5)=="SppSp"]
   SpCoef <- BAMList[[1]]$coef[SpCoefNames]
   
@@ -72,13 +72,6 @@ for(x in 1:length(IcebergAdjList)){
                                     type = "terms",
                                     exclude = "Spp")
     
-    AllPredictions1b <- mclapply(2:21, function(i){
-      predict.bam(BAMList[[1]], 
-                  newdata = AllMammaldf[(Divisions[i-1]+1):Divisions[i],], 
-                  type = "terms",
-                  exclude = "Spp")
-    }, mc.cores = CORES)
-    
     save(AllPredictions1b, file = paste0(FileLoc,"/AllPredictions1b.Rdata"))
     
   }
@@ -87,9 +80,9 @@ for(x in 1:length(IcebergAdjList)){
   
   if(file.exists(paste0(FileLoc, "/AllPredList.Rdata"))) load(paste0(FileLoc, "/AllPredList.Rdata")) else{
     
-    AllIntercept <- attr(AllPredictions1b[[1]], "constant")
+    AllIntercept <- attr(AllPredictions1b, "constant")
     
-    AllPredictions <- lapply(AllPredictions1b, as.data.frame) %>% bind_rows
+    AllPredictions <- AllPredictions1b %>% as.data.frame
     
     AllPredictions[,"Intercept"] <- AllIntercept
     
@@ -109,8 +102,6 @@ for(x in 1:length(IcebergAdjList)){
     save(AllPredList, file = paste0(FileLoc, "/AllPredList.Rdata"))
     
   }
-  
-  PredDF1 <- data.frame(AllPredList)
   
   print("Simulating All Networks!")
   
@@ -152,7 +143,6 @@ for(x in 1:length(IcebergAdjList)){
     
     AllPredDF <- AllPredList %>% as.data.frame()
     
-    #AllPredSums <- apply(AllPredDF,1,sum)
     AllPredSums <- logistic(rowSums(AllPredictions))
     
     AssMat <- matrix(NA, 
