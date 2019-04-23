@@ -6,6 +6,10 @@ library(maptools); library(SpRanger)
 
 currents <- list.files('D:/ICEBERG/RawENMs/PPM/BinaryLU',
                        pattern='.tif', full.names = TRUE)
+
+shortnames <- list.files('D:/ICEBERG/RawENMs/PPM/BinaryLU',
+                       pattern='.tif', full.names = FALSE)
+
   
 VeloxList <- lapply(currents, velox)
   
@@ -24,6 +28,6 @@ RasterListb <- lapply(1:length(RasterLista), function(a){
       raster::resample(RasterLista[[a]], blank, method = 'ngb')
 })
     
-    RasterBrick <- raster::brick(RasterListb)
-    names(RasterBrick) <- Files %>% str_remove(".tif$")
+RasterBrick <- raster::brick(RasterListb)
+names(RasterBrick) <- shortnames %>% str_remove(".tif$")
     
