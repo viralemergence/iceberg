@@ -234,45 +234,134 @@ AllMammaldf2 %>% slice(order(DeltaSharing, decreasing = T)) %>% head(25)
 
 # Making the raster overlaps ####
 
+load("Iceberg Output Files/Futures1/Futures1IcebergRasterBrick.Rdata")
+
 names(RasterBrick) <- names(RasterBrick) %>% str_replace("[.]", "_")
 
-NewOverlapSp <- unique(c(NewEncounters$Sp, NewEncounters$Sp2)) %>% sort()
+NewIntersectsManual <- list()
 
-BinaryNewOverlaps <- 
-  as.matrix(IcebergAdjList[[1]])[AllMammals2,AllMammals2]==0&as.matrix(IcebergAdjList[[2]])[AllMammals2,AllMammals2]>0
-
-NewIntersects <- IntersectGet(RasterBrick, 
-                              Names = NewOverlapSp, 
-                              Predicate = BinaryNewOverlaps)
-
-save(NewIntersects, file = "Iceberg Output Files/NewIntersects.Rdata")
-
-unlist(NewIntersects)
-
-NewIntersectsList <- lapply(1:(length(NewIntersects)-1), function(a){
-  print(a)
+for(i in 1:nrow(NewEncounters)){
   
-  ints <- NewIntersects[[a]][which(c(BinaryNewOverlaps[NewOverlapSp,NewOverlapSp][a,(a+1):length(NewOverlapSp)])>0)]
-  names(ints) <- names(which(c(BinaryNewOverlaps[NewOverlapSp,NewOverlapSp][a,(a+1):length(NewOverlapSp)])>0))
+  print(i)
   
-  return(ints)
+  NewIntersectsManual[[paste(NewEncounters[i,c("Sp","Sp2")], collapse = ".")]] <- 
+    raster::intersect(RasterBrick[[NewEncounters[i,"Sp"]]], 
+                      RasterBrick[[NewEncounters[i,"Sp2"]]])
   
-})
+}
 
-names(NewIntersectsList) <- NewOverlapSp[1:675]
+saveRDS(NewIntersectsManual, file = "Iceberg Output Files/Futures1/NewIntersectsManual.rds")
+save(NewIntersectsManual, file = "Iceberg Output Files/Futures1/NewIntersectsManual.Rdata")
 
-NewIntersectsList %>% unlist
+i = length(list.files("GetIntersects"))
 
-save(NewIntersectsList, file = "Iceberg Output Files/NewIntersectsList.Rdata")
+for(i in i:length(NewIntersectsManual)){
+  print(i)
+  writeRaster(NewIntersectsManual[[i]], file = paste0("GetIntersects/",names(NewIntersectsManual)[i],".tif"))
+}
+
+OverlapBrick <- raster::brick(NewIntersectsManual)
+OverlapBrickSave <- OverlapBrick
+
+sum.raw <- sum(OverlapBrick, na.rm=TRUE)
+sum.raw[sum.raw==0] <- NA
+
+for(i in 1:length(OverlapBrick)){
+  print(i)
+  name <- names(NewIntersectsManual[i])
+  twoname <- strsplit(name,'\\.')[[1]]
+  OverlapBrick[[i]][!is.na(OverlapBrick[[i]])] <- AllSums[twoname[1],twoname[2]]
+  
+}
+
+mean.p <- mean(OverlapBrick, na.rm = TRUE)
+mean.p[mean.p==0] <- NA
+
+sum.p <- sum(OverlapBrick, na.rm = TRUE)
+sum.p[sum.p==0] <- NA
+
+par(mfrow = c(3,1))
+plot(sum.raw, main = 'Raw')
+plot(sum.p, main = 'Sum viral sharing')
+plot(mean.p, main = 'Mean Viral Sharing')
+
+writeRaster(sum.raw, file = "SumOverlap.tif")
+writeRaster(sum.p, file = "SumSharing.tif")
+writeRaster(mean.p, file = "MeanSharing.tif")
 
 # Getting taxonomic patterns of predictions ####
 
-CurrentOverlaps <- rowSums(IcebergAdjList[[1]])
-FutureOverlaps <- rowSums(IcebergAdjList[[1]])
-
 Patterndf <- data.frame(
-  CurrentOverlaps = rowSums(IcebergAdjList[[1]]),
-  FutureOverlaps = rowSums(IcebergAdjList[[2]])
+  Sp = AllMammals2,
+  CurrentOverlaps = rowSums(IcebergAdjList[[1]][AllMammals2, AllMammals2]),
+  FutureOverlaps = rowSums(IcebergAdjList[[2]][AllMammals2, AllMammals2])
 ) %>% mutate(DeltaOverlaps = FutureOverlaps - CurrentOverlaps) %>%
-  mutate(CurrentSharing = rowSums(PredNetworkList[[1]]),
-         FutureSharing = rowSums(PredNetworkList[[2]]))
+  mutate(CurrentSharing = rowSums(PredNetworkList[[1]][AllMammals2, AllMammals2]),
+         FutureSharing = rowSums(PredNetworkList[[2]][AllMammals2, AllMammals2])) %>% mutate(
+           DeltaSharing = FutureSharing - CurrentSharing
+         ) %>% full_join(Panth1)
+
+BarGraph(Patterndf, "hOrder", "DeltaSharing", Order = T, Just = T, Text = "N")
+BarGraph(Patterndf, "hOrder", "CurrentSharing", Order = T, Just = T, Text = "N")
+BarGraph(Patterndf, "hOrder", "FutureSharing", Order = T, Just = T, Text = "N")
+
+colnames(Patterndf)[2:7] %>% lapply(function(a){
+  
+  BarGraph(Patterndf, "hOrder", a, Order = T, Just = T, Text = "N") + 
+    theme(legend.position = "none") +
+    scale_fill_discrete_sequential(palette = AlberPalettes[[1]])
+  
+}) %>% arrange_ggplot2(ncol = 3)
+
+# Just new encounters
+
+NewEncountersGraph <- graph_from_edgelist(NewEncounters[,c("Sp", "Sp2")] %>% as.matrix, directed = F)
+E(NewEncountersGraph)$weights <- NewEncounters$CurrentSharing
+E(NewEncountersGraph)$weights2 <- NewEncounters$FutureSharing
+
+NewEncountersAdj <- get.adjacency(NewEncountersGraph, 
+                                  attr = "weights"
+) %>% 
+  as.matrix #%>% as.data.frame
+
+NewEncountersAdj2 <- get.adjacency(NewEncountersGraph, 
+                                   attr = "weights2"
+) %>% 
+  as.matrix #%>% as.data.frame
+
+NewEncountersPatterns <- NewEncountersAdj %>% 
+  reshape2::melt(value.name = "CurrentSharing") %>% 
+  rename(Sp = Var1, Sp2 = Var2) %>%
+  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp" = "Sp")) %>%
+  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp2" = "Sp")) %>% 
+  right_join(NewEncountersAdj2 %>% 
+               reshape2::melt(value.name = "FutureSharing") %>%
+               rename(Sp = Var1, Sp2 = Var2)) %>%
+  filter(!FutureSharing == 0) %>%
+  mutate(#DeltaOverlap = 
+    DeltaSharing = FutureSharing - CurrentSharing)
+
+NewEncountersPatterns %>% group_by(hOrder.x, hOrder.y) %>% 
+  summarise(FutureSharing = mean(FutureSharing), N = n()) %>% 
+  ggplot(aes(hOrder.x, hOrder.y, fill = log(FutureSharing))) + 
+  geom_tile() + 
+  coord_fixed() + 
+  geom_text(aes(label = N)) + 
+  scale_fill_continuous_sequential(palette = "reds") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+colnames(Patterndf)[2:7] %>% lapply(function(a){
+  
+  BarGraph(Patterndf, "hOrder", a, Order = T, Just = T, Text = "N") + 
+    theme(legend.position = "none") +
+    scale_fill_discrete_sequential(palette = AlberPalettes[[1]])
+  
+}) %>% arrange_ggplot2(ncol = 3)
+
+# Future network #### 
+
+Futures1Graph <- graph_from_edgelist(AllMammaldf2[,c("Sp", "Sp2")] %>% as.matrix, directed = F)
+E(Futures1Graph)$weights <- AllMammaldf2$CurrentSharing
+E(Futures1Graph)$weights2 <- AllMammaldf2$FutureSharing
+
+
+
