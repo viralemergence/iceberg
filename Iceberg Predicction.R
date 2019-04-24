@@ -236,10 +236,43 @@ AllMammaldf2 %>% slice(order(DeltaSharing, decreasing = T)) %>% head(25)
 
 names(RasterBrick) <- names(RasterBrick) %>% str_replace("[.]", "_")
 
-NewOverlapSp <- unique(c(NewEncounters$Sp, NewEncounters$Sp2))
+NewOverlapSp <- unique(c(NewEncounters$Sp, NewEncounters$Sp2)) %>% sort()
 
-BinaryNewOverlaps <- as.matrix(IcebergAdjList[[1]])[AllMammals2,AllMammals2]==0&as.matrix(IcebergAdjList[[2]])[AllMammals2,AllMammals2]>0
+BinaryNewOverlaps <- 
+  as.matrix(IcebergAdjList[[1]])[AllMammals2,AllMammals2]==0&as.matrix(IcebergAdjList[[2]])[AllMammals2,AllMammals2]>0
 
 NewIntersects <- IntersectGet(RasterBrick, 
                               Names = NewOverlapSp, 
                               Predicate = BinaryNewOverlaps)
+
+save(NewIntersects, file = "Iceberg Output Files/NewIntersects.Rdata")
+
+unlist(NewIntersects)
+
+NewIntersectsList <- lapply(1:(length(NewIntersects)-1), function(a){
+  print(a)
+  
+  ints <- NewIntersects[[a]][which(c(BinaryNewOverlaps[NewOverlapSp,NewOverlapSp][a,(a+1):length(NewOverlapSp)])>0)]
+  names(ints) <- names(which(c(BinaryNewOverlaps[NewOverlapSp,NewOverlapSp][a,(a+1):length(NewOverlapSp)])>0))
+  
+  return(ints)
+  
+})
+
+names(NewIntersectsList) <- NewOverlapSp[1:675]
+
+NewIntersectsList %>% unlist
+
+save(NewIntersectsList, file = "Iceberg Output Files/NewIntersectsList.Rdata")
+
+# Getting taxonomic patterns of predictions ####
+
+CurrentOverlaps <- rowSums(IcebergAdjList[[1]])
+FutureOverlaps <- rowSums(IcebergAdjList[[1]])
+
+Patterndf <- data.frame(
+  CurrentOverlaps = rowSums(IcebergAdjList[[1]]),
+  FutureOverlaps = rowSums(IcebergAdjList[[2]])
+) %>% mutate(DeltaOverlaps = FutureOverlaps - CurrentOverlaps) %>%
+  mutate(CurrentSharing = rowSums(PredNetworkList[[1]]),
+         FutureSharing = rowSums(PredNetworkList[[2]]))
