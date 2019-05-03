@@ -30,11 +30,14 @@ tFullSTMatrix <- 1 - (FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!ro
 # PredReps <- c("Currents", paste0("Futures", 1:4))
 # names(IcebergAdjList) <- PredReps[1]
 
-rownames(IcebergAdjList[[2]]) <- colnames(IcebergAdjList[[2]]) <- rownames(IcebergAdjList[[2]]) %>% str_replace("[.]", "_")
+rownames(IcebergAdjList[[2]]) <- colnames(IcebergAdjList[[2]]) <- rownames(IcebergAdjList[[2]]) %>% 
+  str_replace("[.]", "_") %>% str_replace(" ", "_") 
 
 CORES = 1
 
 for(x in 1:length(IcebergAdjList)){
+  
+  print(PredReps[x])
   
   FileLoc <- paste0("Iceberg Output Files/", PredReps[x])
   
@@ -71,7 +74,7 @@ for(x in 1:length(IcebergAdjList)){
     FakeSpp <- matrix(0 , nrow = N, ncol = length(SpCoef))# %>% as("dgCMatrix")
     
     AllMammaldf$Spp <- FakeSpp; remove(FakeSpp)
-    AllMammaldf$MinCites <- mean(c(log(FinalHostMatrix$MinCites+1), log(FinalHostMatrix$MinCites.Sp2+1)))
+    AllMammaldf$MinCites <- mean(c(log(FinalHostMatrix$MinCites+1), log(FinalHostMatrix$MinCites.Sp2+1)), na.rm = T)
     AllMammaldf$Domestic <- 0
     
     AllPredictions1b <- predict.bam(BAMList[[1]], 
@@ -84,7 +87,6 @@ for(x in 1:length(IcebergAdjList)){
   }
   
   print("Predicting All Links!")
-  
   
   AllIntercept <- attr(AllPredictions1b, "constant")
   
@@ -203,22 +205,19 @@ AllMammalMatrix <- data.frame(
   SpaceFuture = c(IcebergAdjList[[2]][AllMammals2,AllMammals2]),
   Phylo = c(tFullSTMatrix[AllMammals2,AllMammals2])
 ) %>% 
-  mutate(#Phylo = (Phylo - min(Phylo))/max(Phylo - min(Phylo)),
-    Gz = as.numeric(SpaceCurrent==0&SpaceFuture==0),
-    DeltaOverlap = SpaceFuture - SpaceCurrent,
-    NewOverlap = as.numeric(SpaceCurrent == 0 & SpaceFuture>0)) %>% droplevels
+  mutate(Gz = as.numeric(SpaceCurrent==0&SpaceFuture==0),
+         DeltaOverlap = SpaceFuture - SpaceCurrent,
+         NewOverlap = as.numeric(SpaceCurrent == 0 & SpaceFuture>0)) %>% #filter(SpaceCurrent == 0 & SpaceFuture>0) %>% 
+  mutate(CurrentSharing = c(as.matrix(PredNetworkList[[1]])[AllMammals2, AllMammals2]),
+         FutureSharing = c(as.matrix(PredNetworkList[[2]])[AllMammals2, AllMammals2]),
+         DeltaSharing = FutureSharing - CurrentSharing) %>%
+  slice(order(DeltaSharing, decreasing = T)) %>%
+  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp" = "Sp")) %>%
+  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp2" = "Sp")) %>% droplevels()
 
 UpperMammals <- which(upper.tri(FullSTMatrix[AllMammals2, AllMammals2], diag = T))
 
 AllMammaldf2 <- AllMammalMatrix[-UpperMammals,]
-
-AllMammaldf2 <- AllMammaldf2 %>% #filter(SpaceCurrent == 0 & SpaceFuture>0) %>% 
-  mutate(CurrentSharing = c(as.matrix(PredNetworkList[[1]])[AllMammals2, AllMammals2])[-UpperMammals],
-         FutureSharing = c(as.matrix(PredNetworkList[[2]])[AllMammals2, AllMammals2])[-UpperMammals],
-         DeltaSharing = FutureSharing - CurrentSharing) %>%
-  slice(order(DeltaSharing, decreasing = T)) %>%
-  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp" = "Sp")) %>%
-  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp2" = "Sp"))
 
 NewEncounters <- AllMammaldf2 %>% filter(SpaceCurrent == 0 & SpaceFuture>0)
 
@@ -234,9 +233,10 @@ AllMammaldf2 %>% slice(order(DeltaSharing, decreasing = T)) %>% head(25)
 
 # Making the raster overlaps ####
 
-load("Iceberg Output Files/Futures1/Futures1IcebergRasterBrick.Rdata")
+Futures1RasterBrick <- read_rds("Iceberg Output Files/Futures1/IcebergRasterBrick.rds")
 
-names(RasterBrick) <- names(RasterBrick) %>% str_replace("[.]", "_")
+names(Futures1RasterBrick) <- names(Futures1RasterBrick) %>% 
+  str_replace("[.]", "_")
 
 NewIntersectsManual <- list()
 
@@ -245,13 +245,23 @@ for(i in 1:nrow(NewEncounters)){
   print(i)
   
   NewIntersectsManual[[paste(NewEncounters[i,c("Sp","Sp2")], collapse = ".")]] <- 
-    raster::intersect(RasterBrick[[NewEncounters[i,"Sp"]]], 
-                      RasterBrick[[NewEncounters[i,"Sp2"]]])
+    raster::intersect(Futures1RasterBrick[[NewEncounters[i,"Sp"]]], 
+                      Futures1RasterBrick[[NewEncounters[i,"Sp2"]]])
   
 }
 
+NewIntersects <- mclapply(1:nrow(NewEncounters), function(i){
+  
+  raster::intersect(Futures1RasterBrick[[NewEncounters[i,"Sp"]]], 
+                    Futures1RasterBrick[[NewEncounters[i,"Sp2"]]])
+  
+}, mc.cores = 60)
+
+names(NewIntersects) <- paste(NewEncounters[,c("Sp","Sp2")], sep = ".")
+
 saveRDS(NewIntersectsManual, file = "Iceberg Output Files/Futures1/NewIntersectsManual.rds")
 save(NewIntersectsManual, file = "Iceberg Output Files/Futures1/NewIntersectsManual.Rdata")
+save(NewIntersects, file = "Iceberg Output Files/Futures1/NewIntersects.Rdata")
 
 i = length(list.files("GetIntersects"))
 
@@ -261,7 +271,30 @@ for(i in i:length(NewIntersectsManual)){
 }
 
 OverlapBrick <- raster::brick(NewIntersectsManual)
+OverlapBrick <- raster::brick(NewIntersects)
 OverlapBrickSave <- OverlapBrick
+
+
+
+OverlapSums <- lapply(1:length(NewIntersects), function(a){
+  
+  print(a)
+  
+  raster::getValues(NewIntersects[[a]])
+  
+}) #%>% bind_cols %>% rowSums(na.rm = T)
+
+OverlapSums2 <- OverlapSums %>% bind_cols %>% rowSums(na.rm = T)
+
+GridDF <- data.frame(
+  Sum = OverlapSums2,
+  X = rep(1:ncol(NewIntersects[[1]]), nrow(NewIntersects[[1]])),
+  Y = rep(nrow(NewIntersects[[1]]):1, each = ncol(NewIntersects[[1]]))
+)
+
+ggplot(GridDF, aes(X, Y)) + 
+  geom_tile(aes(fill = Sum)) + 
+  coord_fixed()
 
 sum.raw <- sum(OverlapBrick, na.rm=TRUE)
 sum.raw[sum.raw==0] <- NA
@@ -271,8 +304,7 @@ for(i in 1:length(OverlapBrick)){
   name <- names(NewIntersectsManual[i])
   twoname <- strsplit(name,'\\.')[[1]]
   OverlapBrick[[i]][!is.na(OverlapBrick[[i]])] <- AllSums[twoname[1],twoname[2]]
-  
-}
+  }
 
 mean.p <- mean(OverlapBrick, na.rm = TRUE)
 mean.p[mean.p==0] <- NA
@@ -281,8 +313,8 @@ sum.p <- sum(OverlapBrick, na.rm = TRUE)
 sum.p[sum.p==0] <- NA
 
 par(mfrow = c(3,1))
-plot(sum.raw, main = 'Raw')
-plot(sum.p, main = 'Sum viral sharing')
+plot(sum.raw, main = 'Raw Overlaps')
+plot(sum.p, main = 'Sum Viral Sharing')
 plot(mean.p, main = 'Mean Viral Sharing')
 
 writeRaster(sum.raw, file = "SumOverlap.tif")
@@ -357,11 +389,47 @@ colnames(Patterndf)[2:7] %>% lapply(function(a){
   
 }) %>% arrange_ggplot2(ncol = 3)
 
-# Future network #### 
+# Order level network #### 
 
-Futures1Graph <- graph_from_edgelist(AllMammaldf2[,c("Sp", "Sp2")] %>% as.matrix, directed = F)
-E(Futures1Graph)$weights <- AllMammaldf2$CurrentSharing
-E(Futures1Graph)$weights2 <- AllMammaldf2$FutureSharing
+OrderSharing <- AllMammalMatrix %>% 
+  group_by(hOrder.x, hOrder.y) %>%
+  summarise_at(vars(ends_with("Sharing"), 
+                    starts_with("Delta"), 
+                    starts_with("Space")), 
+               mean) %>% as.data.frame()
+
+Lower <- which(lower.tri(matrix(NA, nlevels(OrderSharing$hOrder.x), nlevels(OrderSharing$hOrder.x))))
+
+OrderSharing <- OrderSharing[Lower,]
+
+OrderGraph <- graph_from_edgelist(OrderSharing[,1:2] %>% as.matrix(), directed = F)
+
+OrderAdjList <- OrderGraphList <- list()
+
+for(i in (ncol(OrderSharing)-4):ncol(OrderSharing)){
+  
+  E(OrderGraph)$weight <- OrderSharing[,i]
+  
+  OrderAdjList[[colnames(OrderSharing)[i]]] <- get.adjacency(OrderGraph, attr = "weight")
+  
+  OrderGraphList <- OrderGraph
+  
+}
+
+# GridDensities #####
+
+GridDensities <- lapply(1:length(RasterListb), function(a){
+  
+  print(a)
+  
+  raster::getValues(RasterListb[[a]])
+  
+}) #%>% bind_cols %>% rowSums(na.rm = T)
+
+GridDensities2 <- GridDensities %>% 
+  bind_cols %>% rowSums(na.rm = T)
+
+
 
 
 
