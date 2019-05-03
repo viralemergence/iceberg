@@ -69,7 +69,22 @@ if(length(list.files("PostDispersal"))==0){
 # If not all of them worked, this will rerun them quickly! 
 
 Success <- list.files("PostDispersal") %>% str_split(".tif$") %>% purrr::map(1) %>% unlist
-Fail <- setdiff(RasterSp, Success)
+
+Fail <- setdiff(RasterSp, Success); length(Fail)
+
+if(file.exists("Iceberg Input Files/PreSizes.Rdata")) load("Iceberg Input Files/PreSizes.Rdata") else{
+  PreDispList <- lapply(list.files("Iceberg Input Files/Currents") %>% sort, function(a) raster(paste0("Iceberg Input Files/Currents/",a)))
+  names(PreDispList) <- list.files("Iceberg Input Files/Currents") %>% sort %>% str_split(".tif$") %>% purrr::map(1) %>% unlist
+  PreSizes <- sapply(PreDispList, function(a) length(na.omit(values(a))))
+  names(PreDispList)[order(PreSizes, decreasing = F)]
+  
+  save(PreSizes, file = "Iceberg Input Files/PreSizes.Rdata")
+}
+
+SubPreSizes <- PreSizes[Fail]
+Fail <- Fail[order(SubPreSizes)]
+
+list(qplot(PreSizes), qplot(SubPreSizes)) %>% arrange_ggplot2
 
 mclapply(Fail, function(a){
   
@@ -78,10 +93,10 @@ mclapply(Fail, function(a){
   testraster <- raster::resample(testraster, blank, method = 'ngb')
   if(1%in%unique(values(testraster))){
     dk <- disp[disp$Scientific_name == a, 'disp50']*1000
-    buff <- buffer(testraster, dk)
+    buff <- buffer(testraster, dk, doEdges = T)
     writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
   }
-}, mc.cores = 60)
+}, mc.cores = 34)
 
 stop()
 
@@ -140,10 +155,14 @@ paste0("Iceberg Input Files/Currents/",
 
 # Compare pre- and post-dispersal for a given species ####
 
-Success <- list.files("PostDispersal") %>% str_split(".tif$") %>% purrr::map(1) %>% unlist
+library(fs)
+
+Success <- (dir_info("PostDispersal") %>% slice(order(modification_time)))$path %>% str_split("[/]") %>% map(2)  %>% str_split(".tif") %>% map(1) %>% unlist
 
 a = last(Success)
 a
+
+disp[disp$Scientific_name == a, 'disp50']
 
 testraster1 <- raster(paste0('Iceberg Input Files/Currents/',a,'.tif')) # CAREFUL OF SPACE BEFORE PERIOD
 testraster1 <- raster::resample(testraster1, blank, method = 'ngb')
@@ -158,6 +177,32 @@ par(mfrow = c(2,1))
 
 plot(testraster1)
 plot(testraster2)
+
+# Testing whether doEdges is faster ####
+
+a = "Rattus_rattus"
+a = "Peropteryx_trinitatis"
+testraster <- raster(paste0('Iceberg Input Files/Currents/',a,'.tif')) # CAREFUL OF SPACE BEFORE PERIOD
+
+testraster <- raster::resample(testraster, blank, method = 'ngb')
+dk <- disp[disp$Scientific_name == a, 'disp50']
+
+t1 = Sys.time()
+buff <- buffer(testraster, dk)
+print("1 done!")
+t2 = Sys.time()
+t2 - t1
+print(t2 - t1)
+buff2 <- buffer(testraster, dk, doEdges = T)
+t3 = Sys.time()
+
+t3 - t2
+print(t3 - t2)
+
+stop()
+
+
+
 
 
 
