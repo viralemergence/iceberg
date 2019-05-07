@@ -1,14 +1,20 @@
 
+
 # Parsing Cory's maps ####
+
+# Rscript "Iceberg Spatial.R"
 
 library(velox);
 library(sf); library(fasterize); library(Matrix);library(ggplot2);
 library(ggregplot); library(raster); library(tidyverse); library(igraph); 
 library(maptools); library(SpRanger); library(parallel)
 
+DropSpecies <- c("Lobodon carcinophaga","Leptonychotes weddellii","Enhydra lutris","Histriophoca fasciata") %>% 
+  str_replace(" ","_")
+
 IcebergAdjList <- list()
 
-PredReps <- c("Currents", paste0("Futures", 1:2))
+PredReps <- c("Currents", paste0("Futures", 1:4))
 
 blank <- matrix(0,360*2,720*2) # proper resolution
 # blank <- matrix(0, 360, 720) # quick and dirty resolution
@@ -16,13 +22,16 @@ blank <- raster(blank)
 extent(blank) <- c(-180,180,-90,90)
 projection(blank) <- CRS("+proj=longlat +datum=WGS84")
 
+AreaRaster <- raster("Iceberg Input Files/LandArea.asc")
+AreaValues <- raster::values(AreaRaster)
+
 CORES = 1
 
 for(x in 1:length(PredReps)){
   
   print(PredReps[x])
   
-  Files <- list.files(paste0("Iceberg Input Files/",PredReps[x]))
+  Files <- list.files(paste0("Iceberg Input Files/",PredReps[x])) %>% setdiff(DropSpecies)
   
   Velox = T
   
@@ -30,7 +39,6 @@ for(x in 1:length(PredReps)){
     
     VeloxList <- lapply(Files, function(a){
       if(which(Files==a) %% 500==0) print(a)
-      print(a)
       r1 <- velox(paste(paste0("Iceberg Input Files/",PredReps[x]), a, sep = '/'))
     })
     
@@ -60,7 +68,7 @@ for(x in 1:length(PredReps)){
       if(a %% 500==0) print(a)
       
       testraster <- RasterLista[[a]]
-      testraster <- raster::resample(testraster, blank, method = 'ngb')
+      testraster <- raster::resample(testraster, blank, method = 'ngb') #*AreaRaster
       
       return(testraster)
       
@@ -68,38 +76,34 @@ for(x in 1:length(PredReps)){
     
   } else {
     
-    RasterListb <- RasterLista
+    RasterListb <- RasterLista # %>% lapply(function(a) a*AreaRaster)
     
   }
   
   names(RasterListb) <- Files %>% str_remove(".tif$") %>% str_replace(" ", "_")
   
-  Project = T
+  Project = F
   
   if(Project){
-  
-  RasterListc <- mclapply(RasterListb[1:round(length(RasterListb)/2)], function(a){ 
-    crs(a) <- "+proj=longlat +datum=WGS84"
-    projectRaster(a, crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs", 
-                  method = "bilinear")
-  }, mc.cores = CORES)
-  
-  RasterListc[(length(RasterListc)+1):length(RasterListb)] <- mclapply(RasterListb[(length(RasterListc)+1):length(RasterListb)], function(a){ 
-    crs(a) <- "+proj=longlat +datum=WGS84"
-    projectRaster(a, crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs", 
-                  method = "bilinear")
-  }, mc.cores = CORES)
-  
-  #RasterListc <- mclapply(RasterListb, function(a){
-  #  crs(a) <- "+proj=longlat +datum=WGS84"
-  #  projectRaster(a, crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs",
-  #                method = "bilinear")
-  #}, mc.cores = 1)
-  
+    
+    RasterListc <- mclapply(RasterListb[1:round(length(RasterListb)/2)], function(a){ 
+      crs(a) <- "+proj=longlat +datum=WGS84"
+      projectRaster(a, crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs", 
+                    method = "bilinear")
+    }, mc.cores = CORES)
+    
+    RasterListc[(length(RasterListc)+1):length(RasterListb)] <- mclapply(RasterListb[(length(RasterListc)+1):length(RasterListb)], function(a){ 
+      crs(a) <- "+proj=longlat +datum=WGS84"
+      projectRaster(a, crs = "+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs", 
+                    method = "bilinear")
+    }, mc.cores = CORES)
+
   } else {
     RasterListc <- RasterListb
   }
   names(RasterListc) <- Files %>% str_remove(".tif$") %>% str_replace(" ", "_")
+  
+  RasterListc <- RasterListc[setdiff(names(RasterListc), DropSpecies)]
   
   IcebergAdj <- PairsWisely(RasterListc)
   
@@ -113,12 +117,26 @@ for(x in 1:length(PredReps)){
 
 remove(list(RasterLista, RasterListb, RasterListc))
 
+CurrentSpecies <- rownames(IcebergAdjList[[1]])
+
+for(x in 2:length(IcebergAdjList)){
+  
+  NewAdj <- IcebergAdjList[[x]]
+  InsertSpecies <- setdiff(CurrentSpecies, rownames(NewAdj))
+  
+  if(length(InsertSpecies)>0){
+    
+    NewAdj <- NewAdj %>% data.frame()
+    NewAdj[InsertSpecies,] <- 0; NewAdj[,InsertSpecies] <- 0
+    NewAdj <- NewAdj %>% as.matrix
+    
+    IcebergAdjList[[x]] <- NewAdj[CurrentSpecies, CurrentSpecies]
+  }
+}
+
 save(IcebergAdjList, file = "Iceberg Output Files/IcebergAdjList.Rdata")
 
-RasterBrick <- raster::brick(RasterListc)
+# IcebergAdjList <- lapply(PredReps, function(a) readRDS(paste0("Iceberg Output Files/",a,"/IcebergRangeAdj.rds")))
+# names(IcebergAdjList) <- PredReps
 
-BrickAdj <- PairsWisely(RasterBrick)
-save(BrickAdj, file = "TryingFutures1BrickAdj.Rdata")
-ListAdj <- PairsWisely(RasterListc)
-save(ListAdj, file = "TryingFutures1ListAdj.Rdata")
 
