@@ -27,7 +27,7 @@ col.matrix<-colmat(nquantiles=10, upperleft="cyan", upperright="purple",
                    bottomleft="beige", bottomright="brown1", 
                    xlab="Projected viral sharing in wildlife", ylab="log Human population density")
 
-bivariate.map<-function(rasterx, rastery, colormatrix=col.matrix, nquantiles=5){
+bivariate.map<-function(rasterx, rastery, colormatrix=col.matrix, nquantiles=10){
     quanmean<-getValues(rasterx)
     temp<-data.frame(quanmean, quantile=rep(NA, length(quanmean)))
     brks<-with(temp, quantile(unique(temp),na.rm=TRUE, probs = c(seq(0,1,1/nquantiles))))

@@ -42,7 +42,7 @@ noD.auto <- c(spname[!(spname %in% disp.names)]) # Species with no dispersal
 
 ##########################################################
 
-ncin <- nc_open("D:/ssp5rcp85.nc")
+ncin <- nc_open("D:/ssp1rcp26.nc")
 
 get <- function(varname) {
   soilm_array <- ncvar_get(ncin,varname,start=c(1,1,56)) # 56 is what sets it to 2070
@@ -60,8 +60,8 @@ plot(landuse2070)
 
 ################# NEED TO REPLACE landuse2070 WITH A NEW THING
 
-future.dir <- 'D:/ICEBERG/RawENMs/PPM/OtherEnvPred/he8570/BinaryMaps'
-outdir <- 'D:/ICEBERG/RawENMs/PPM/OtherEnvPred/he8570 PROCESSED'
+future.dir <- 'D:/ICEBERG/RawENMs/PPM/OtherEnvPred/he2670/BinaryMaps'
+outdir <- 'D:/ICEBERG/RawENMs/PPM/OtherEnvPred/he2670 PROCESSED'
 
 raws.long <- list.files(future.dir, 
                    recursive= TRUE, 
@@ -120,7 +120,7 @@ mean(lu.red[!is.nan(lu.red)])
 mean(disp.red[!is.nan(disp.red)])
 
 reductions <- data.frame(lu.red, disp.red)
-write.csv(reductions, 'reductions 8.5.csv')
+write.csv(reductions, 'reductions 6.0.csv')
 
 1-mean(na.omit(reductions[,1]))
 1-mean(na.omit(reductions[,2]))
