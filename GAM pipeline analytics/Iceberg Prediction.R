@@ -33,7 +33,7 @@ rownames(IcebergAdjList[[2]]) <- colnames(IcebergAdjList[[2]]) <- rownames(Icebe
 # Making the prediction data frame ####
 
 AllMammals <- reduce(lapply(IcebergAdjList, rownames), 
-                      intersect) %>% intersect(rownames(FullSTMatrix)) %>%
+                     intersect) %>% intersect(rownames(FullSTMatrix)) %>%
   setdiff(NonEutherianSp) %>% 
   sort()
 
@@ -82,7 +82,7 @@ for(x in 1:length(IcebergAdjList)){
   AllMammaldf$Gz = as.numeric(AllMammaldf$Space==0)
   
   print("Prediction Effects!")
-
+  
   AllPredictions1b <- predict.bam(BAMList[[1]], 
                                   newdata = AllMammaldf, # %>% select(-Spp),
                                   type = "terms",
@@ -135,24 +135,71 @@ AllMammaldf[,SharingVars] <-
 AllMammaldf[,paste0("Delta",SharingVars[2:length(SharingVars)])]<-
   apply(AllMammaldf[,SharingVars[2:length(SharingVars)]], 2, function(a) a - AllMammaldf$Sharing.Currents)
 
+PredNetworkList2 <- list()
+
+for(x in 1:length(IcebergAdjList)){
+  
+  print(PredReps[x])
+  
+  FileLoc <- paste0("Iceberg Output Files/", PredReps[x])
+  
+  AllMammaldf$Space = AllMammaldf[,SpaceVars[x]]
+  AllMammaldf$Gz = as.numeric(AllMammaldf$Space==0)
+  
+  print("Prediction Effects!")
+  
+  AllPredictions1b <- predict.bam(BAMList[[1]], 
+                                  newdata = AllMammaldf, # %>% select(-Spp),
+                                  type = "terms",
+                                  exclude = "Spp")
+  
+  AllIntercept <- attr(AllPredictions1b, "constant")
+  
+  AllPredictions <- AllPredictions1b %>% as.data.frame
+  
+  AllPredictions[,"Intercept"] <- AllIntercept
+  
+  AllPredList <- lapply(1:1000, function(a){
+    
+    AllPredictions[,"Spp"] <- sample(SpCoef, N, replace = T) + 
+      sample(SpCoef, N, replace = T)
+    
+    # Making summed matrix ####
+    
+    AllPredSums <- logistic(rowSums(AllPredictions)) %>% 
+      rbinom(n = N,
+             prob = .,
+             size  = 1)
+    
+    return(AllPredSums)
+    
+  })
+  
+  PredNetworkList2[[PredReps[x]]] <- AllPredList
+  
+}
+
+save(PredNetworkList2, file = "PredNetworkList2.Rdata")
+
+DF = lapply(PredReps, function(x){
+  
+  print(x)
+  
+  PredNetworkList2[[x]] %>% bind_cols %>% rowSums
+  
+}) %>% bind_cols
+
+
+AllMammaldf[,paste0(SharingVars,2)] <-
+  DF/1000
+
+
+AllMammaldf[,paste0("Delta",SharingVars[2:length(SharingVars)],2)]<-
+  apply(AllMammaldf[,paste0(SharingVars[2:length(SharingVars)],2)], 2, function(a) a - AllMammaldf$Sharing.Currents2)
+
 NewEncountersList <- lapply(SpaceVars[2:length(SpaceVars)], function(a) AllMammaldf[AllMammaldf$Space.Currents==0&AllMammaldf[,a]>0,])
 
 names(NewEncountersList) <- PredReps[2:5]
 
 save(AllMammaldf, file = "Iceberg Output Files/AllMammaldf.Rdata")
 save(NewEncountersList, file = "Iceberg Output Files/NewEncounters.Rdata")
-
-# GridDensities #####
-
-GridDensitiesdf <- lapply(1:length(RasterListb), function(a){
-  
-  print(a)
-  
-  raster::getValues(RasterListb[[a]])
-  
-}) #%>% bind_cols %>% rowSums(na.rm = T)
-
-GridDensities <- GridDensitiesdf %>% 
-  bind_cols %>% rowSums(na.rm = T)
-
-

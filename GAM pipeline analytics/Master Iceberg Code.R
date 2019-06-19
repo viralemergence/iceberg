@@ -6,7 +6,7 @@ rm(list = ls())
 
 # Running data setup scripts ####
 
-CodeRoot <- "~/Albersnet"
+CodeRoot <- "Iceberg Code"
 
 StartTime <- Sys.time()
 
@@ -29,9 +29,9 @@ print("Final Dataset")
 source(paste0(CodeRoot,"/","0e_Creating Final Host Dataset.R"))
 #print("Subsets")
 
-CodeRoot <- "~/Albersnet"
+CodeRoot <- "Iceberg Code"
 
-print("Phylo")
+print("GAMs")
 source(paste0(CodeRoot,"/","Iceberg GAMs.R" ))
 
 print("Predicting")

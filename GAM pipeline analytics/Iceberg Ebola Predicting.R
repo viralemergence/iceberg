@@ -4,6 +4,20 @@
 HP3EbolaHosts <- AssocsBase %>% filter(Virus == "Zaire_ebolavirus")
 LauraEbolaHosts <- read.csv("Iceberg Input Files/ZEBOV hosts.csv")
 
+AllSums = PredNetworkList[[1]] 
+
+PredRows <- as.matrix(AllSums)[HP3EbolaHosts$Host,]
+PredRowSums <- colSums(PredRows) %>% sort(decreasing = T)
+
+Preddf = data.frame(
+  Sp = names(PredRowSums),
+  Prob = PredRowSums/length(HP3EbolaHosts$Host)
+) %>% mutate(Rank = 1:n(),
+             Known = as.numeric(Sp %in%HP3EbolaHosts),
+             Predicted = as.numeric(Sp%in%LauraEbolaHosts$bat_species))
+
+Preddf %>% filter(Known==0) %>% SinaGraph("Predicted", "Rank")
+
 EbolaHosts <- union(HP3EbolaHosts$Host, LauraEbolaHosts$bat_species)
 
 EbolaEncounters <- lapply(NewEncountersList, function(a){

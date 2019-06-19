@@ -63,7 +63,7 @@ for(x in 1:length(IcebergAdjList)){
     if(sp%in%rownames(PredNetworkList[[x]])){
       SubSums <- raster::getValues(RasterListb[[i]])
       SubSums[is.na(SubSums)] <- 0
-      SubSums[SubSums>0] <- sum(PredNetworkList[[x]][sp,])
+      SubSums[SubSums>0] <- AllMammaldf %>% filter(Sp==sp|Sp2==sp) %>% summarise(mean(paste0(SharingVars[PredReps[x]],2)))
       OverlapSharingSums <- OverlapSharingSums + SubSums
     }
   }

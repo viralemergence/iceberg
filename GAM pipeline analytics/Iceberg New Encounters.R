@@ -31,7 +31,6 @@ for(x in 2:length(NewEncountersList)){
     str_replace(" ", "_") %>% 
     str_replace("[.]", "_") %>% str_remove(".tif$") 
   
-  # NewEncounters = NewEncountersList[[x]]
   NewEncounters = NewEncountersList[[x]]
   
   NewIntersectsManual <- list()
@@ -72,7 +71,7 @@ for(x in 2:length(NewEncountersList)){
     if( i %% 1000 == 0) print(i)
     SubSums <- raster::getValues(NewIntersectsManual[[i]])
     SubSums[is.na(SubSums)] <- 0
-    SubSums[SubSums>0] <- PredNetworkList[[x+1]][NewEncounters[i,"Sp"],NewEncounters[i,"Sp2"]]
+    SubSums[SubSums>0] <- NewEncounters[i,SharingVars[x+1]]
     OverlapSharingSums <- OverlapSharingSums + SubSums
     
   }

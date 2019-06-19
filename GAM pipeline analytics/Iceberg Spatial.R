@@ -27,7 +27,7 @@ AreaValues <- raster::values(AreaRaster)
 CORES = 1
 
 for(x in 1:length(PredReps)){
-  
+
   print(PredReps[x])
   
   Files <- list.files(paste0("Iceberg Input Files/",PredReps[x])) %>% setdiff(DropSpecies)
@@ -54,7 +54,7 @@ for(x in 1:length(PredReps)){
       
       if(a %% 500==0) print(a)
       
-      raster(paste(paste0("Iceberg Input Files/",PredReps[x]), a, sep = '/'))
+      r1 = raster(paste(paste0("Iceberg Input Files/",PredReps[x]), a, sep = '/'))
       
     })
     
@@ -100,9 +100,34 @@ for(x in 1:length(PredReps)){
   } else {
     RasterListc <- RasterListb
   }
+  
   names(RasterListc) <- Files %>% str_remove(".tif$") %>% str_replace(" ", "_")
   
   RasterListc <- RasterListc[setdiff(names(RasterListc), DropSpecies)]
+  
+  ContinentClip = T
+  
+  if(ContinentClip){
+    
+    #for(i in setdiff(names(RasterListc), KeepContinents)){
+    #  
+    #  WhichFill <- unlist(ContinentWhich[ContinentsInhabited[[i]]])
+    #  
+    #  if(length(table(values(RasterListc[[i]])[-WhichFill]))>0) print(length(table(values(RasterListc[[i]])[-WhichFill]))/(length(na.omit(values(RasterListc[[i]])[WhichFill]))+length(na.omit(values(RasterListc[[i]])[-WhichFill]))))
+    #  
+    #  values(RasterListc[[i]])[-WhichFill] <- NA
+    #  
+    #}
+    
+    for(i in setdiff(names(RasterListc), KeepContinents)){
+     
+      NotInhabited <- ContinentWhich[setdiff(names(ContinentValues), ContinentContinentsInhabited[[i]])] %>% unlist
+      
+      values(RasterListc[[i]])[NotInhabited] <- NA
+      
+    }
+    
+  }
   
   IcebergAdj <- PairsWisely(RasterListc, Area = F)
   
