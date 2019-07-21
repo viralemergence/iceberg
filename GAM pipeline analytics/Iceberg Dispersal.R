@@ -5,6 +5,18 @@ library(raster)
 library(parallel)
 library(tidyverse)
 
+### DISPERSALS BUT MAKE IT GOOD
+
+
+buffer2 <- function(r, dist) {
+  projR <- projectRaster(euras, crs=CRS("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"))
+  projRb <- raster::buffer(projR, dist)
+  projRb <- projectRaster(projRb, crs=CRS("+proj=longlat +datum=WGS84"))
+  projRb[!is.na(projRb)] <- 1
+  return(projRb)
+}
+
+
 ### fix blank
 
 blank <- matrix(0,360*2,720*2)
@@ -59,7 +71,7 @@ if(length(list.files("PostDispersal"))==0){
     testraster <- raster::resample(testraster, blank, method = 'ngb')
     if(1%in%unique(values(testraster))){
       dk <- disp[disp$Scientific_name == a, 'disp50']*1000
-      buff <- buffer(testraster, dk)
+      buff <- buffer2(testraster, dk)
       writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
     }
   }, mc.cores = 60)
@@ -93,7 +105,7 @@ mclapply(Fail, function(a){
   testraster <- raster::resample(testraster, blank, method = 'ngb')
   if(1%in%unique(values(testraster))){
     dk <- disp[disp$Scientific_name == a, 'disp50']*1000
-    buff <- buffer(testraster, dk, doEdges = T)
+    buff <- buffer2(testraster, dk, doEdges = T)
     writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
   }
 }, mc.cores = 34)
@@ -143,7 +155,7 @@ sapply(Fail[ShouldntFail>0], function(a){
   if(testraster %>% values %>% na.omit %>% length == 0) print("AAAAAAAAAAAA") else{
     
     dk <- disp[disp$Scientific_name == a, 'disp50']
-    buff <- buffer(testraster, dk)
+    buff <- buffer2(testraster, dk)
     writeRaster(buff, filename = paste0("PostDispersal/",a,'.tif'))
   }
 })
