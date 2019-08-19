@@ -1,27 +1,11 @@
-library(ncdf4)
-library(raster)
-setwd("D:/ICEBERG")
-
-ncin <- nc_open("states.nc")
-
-get <- function(varname) {
-  soilm_array <- ncvar_get(ncin,varname,start=c(1,1,1166))
-  slice <- raster(t(soilm_array))
-  raster::extent(slice) <- c(-180,180,-90,90)
-  return(slice)
-}
-
-lutypes <- names(ncin$var)[1:12]
-
-landuse2017 <- stack(lapply(lutypes,get))
-names(landuse2017) <- lutypes
-landuse2017 <- (landuse2017>0)
-plot(landuse2017)
-
 ###################################
 
 #IUCN grabber: run back half of iucn habitat
 #####################
+
+# 0. Land use types
+
+lutypes <- c("primf","primn","secdf","secdn","urban","c3ann","c4ann","c3per","c4per","c3nfx","pastr","range")
 
 # 1. read in the list of species we're including
 setwd('C:/Users/cjcar/Dropbox/ViralChatter')
@@ -71,11 +55,7 @@ drop.marine <- c()
 #length(spname)
 for (i in 1:length(spname)) {
   spnamei <- spname[i]
-  wdir <- paste('D:/ICEBERG/RawENMs/PPM/BinaryMaps/',
-                gsub(' ','_',spnamei),sep='')
-  
-  if(length(list.files(wdir))==0) { next } else {
-    LUHi <- LUHdat[spnamei]
+  LUHi <- LUHdat[spnamei]
     if (all(is.na(LUHi))) { 
       noL.auto <- c(noL.auto, spnamei)
     } else { 
@@ -84,5 +64,5 @@ for (i in 1:length(spname)) {
             drop.marine <- c(drop.marine,spnamei)
       } 
     }
-  }
 }
+
