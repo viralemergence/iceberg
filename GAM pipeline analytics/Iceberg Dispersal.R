@@ -9,7 +9,7 @@ library(tidyverse)
 
 
 buffer2 <- function(r, dist) {
-  projR <- projectRaster(euras, crs=CRS("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"))
+  projR <- projectRaster(r, crs=CRS("+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"))
   projRb <- raster::buffer(projR, dist)
   projRb <- projectRaster(projRb, crs=CRS("+proj=longlat +datum=WGS84"))
   projRb[!is.na(projRb)] <- 1
