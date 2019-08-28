@@ -4,6 +4,7 @@
 library(tidyverse); library(raster); library(parallel); library(sf)
 
 Method = "MaxEnt"
+Method = "RangeBags"
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
 
