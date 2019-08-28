@@ -4,6 +4,7 @@
 library(tidyverse); library(raster); library(parallel); library(sf)
 
 Method = "MaxEnt"
+Method = "RangeBags"
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
 
@@ -220,11 +221,13 @@ Dispersals <- read.csv("Iceberg Input Files/Data for dispersal.csv", header = T)
 Dispersals <- Dispersals %>% filter(!is.na(Scientific_name), !is.na(disp50))
 Dispersals$Scientific_name <- Dispersals$Scientific_name %>% str_replace(" ", "_")
 
-Species <- intersect(Species, Dispersals$Scientific_name)
-
 paste0("Iceberg Input Files/",
-       Method,"/05_DispersalBuffers/") %>% list.files %>% str_remove(".tif") %>%
-  setdiff(Species, .) -> ToBuffer
+       Method,"/04_LandUseClipped/", "Currents") %>% list.files %>% str_remove(".tif") ->
+  Species
+
+ToBuffer <- intersect(Species, Dispersals$Scientific_name)
+
+NotToBuffer <- setdiff(Species, ToBuffer)
 
 mclapply(1:length(ToBuffer), function(i){
   
@@ -242,6 +245,23 @@ mclapply(1:length(ToBuffer), function(i){
   
   writeRaster(r3, file = paste0("Iceberg Input Files/",
                                 Method,"/06_DispersalBuffers_Resampled/",Sp,".tif"),
+              overwrite = T)
+  
+}, mc.preschedule = F)
+
+
+mclapply(1:length(NotToBuffer), function(i){
+  
+  Sp <- NotToBuffer[i]
+
+  r1 <- RasterListd[[Sp]]
+  
+  r3 <- resample(r1, blank, method = "ngb")
+  
+  values(r3) <- 1
+  
+  writeRaster(r3, file = paste0("Iceberg Input Files/",
+                                Method,"/06_DispersalBuffersResampled/",Sp,".tif"),
               overwrite = T)
   
 }, mc.preschedule = F)
@@ -288,8 +308,10 @@ names(RasterListd) <- Species <- "Iceberg Input Files/" %>%
   paste0(Method,"/04_LandUseClipped/",x) %>%
   list.files() %>% str_remove(".tif")
 
-"Iceberg Input Files/MaxEnt/Final/Currents" %>% list.files %>% str_remove(".tif") %>%
+paste0("Iceberg Input Files/",Method,"/Final/Currents") %>% list.files %>% str_remove(".tif") %>%
   setdiff(Species, .) -> ToClip
+
+load("~/LargeFiles/MammalStackFullMercator.Rdata")
 
 NoIUCN <- intersect(ToClip, names(MammalStackFull))[which(sapply(intersect(ToClip, names(MammalStackFull)), function(a) MammalStackFull[[a]] %>% values %>% na.omit %>% length)==0)]
 NoIUCN2 <- setdiff(ToClip, names(MammalStackFull))
@@ -312,7 +334,7 @@ mclapply(1:length(ToClip), function(a){
                                 Method,"/Final/",x,"/",Sp,".tif"),
               overwrite = T)
   
-}, mc.preschedule = F)
+}, mc.preschedule = F, mc.cores = 45)
 
 mclapply(1:length(NoIUCN), function(a){
   
