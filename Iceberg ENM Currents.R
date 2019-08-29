@@ -4,7 +4,7 @@
 library(tidyverse); library(raster); library(parallel); library(sf)
 
 Method = "MaxEnt"
-Method = "RangeBags"
+#Method = "RangeBags"
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
 
@@ -18,11 +18,9 @@ AreaValues <- raster::values(AreaRaster)
 
 # 01_Processing Currents ####
 
-x = "Currents"
-
 # 02_Resampling rasters ####
 
-Root <- paste0("Iceberg Input Files/", Method,"/01_Raw/",x)
+Root <- paste0("Iceberg Input Files/", Method,"/01_Raw/","Currents")
 
 Files <- list.files(Root)
 
@@ -43,36 +41,36 @@ RasterLista <- RasterLista[!sapply(RasterLista, is.null)]
 Species <- intersect(names(RasterLista), Species1)
 SpeciesLost <- setdiff(Species1, names(RasterLista))
 
-Species <- intersect(Species, FullMaxEntSp)
+Species <- intersect(Species, SpeciesList[[Method]])
 
 RasterLista <- RasterLista[Species]
 
-RasterListb <- mclapply(1:length(Species), function(a){
+mclapply(1:length(Species), function(a){
   
   if(a %% 500==0) print(a)
   
   testraster <- RasterLista[[Species[a]]]
-  testraster <- raster::resample(testraster, blank, method = 'ngb')#*AreaRaster
+  testraster <- raster::resample(testraster, blank, method = 'ngb')
   
   writeRaster(testraster,
               file = paste0("Iceberg Input Files/",
-                            Method,"/02_Resampled/",x,"/",Species[a],".tif"), overwrite = T)
+                            Method,"/02_Resampled/","Currents","/",Species[a],".tif"), overwrite = T)
   
   return(testraster)
   
 }, mc.preschedule = F)
 
-"Iceberg Input Files/" %>% paste0(Method,"/02_Resampled/",x) %>% list.files(full.names = T) %>%
+"Iceberg Input Files/" %>% paste0(Method,"/02_Resampled/","Currents") %>% list.files(full.names = T) %>%
   mclapply(raster) -> RasterListb
 
 names(RasterListb) <- Species <-
-  "Iceberg Input Files/" %>% paste0(Method,"/02_Resampled/",x) %>%
+  "Iceberg Input Files/" %>% paste0(Method,"/02_Resampled/","Currents") %>%
   list.files() %>%
   str_remove(".tif")
 
 # 03_Clipping by the IUCN ranges ####
 
-if(file.exists("Iceberg Input Files/IUCNBuffers.Rdata")){ load("Iceberg Input Files/IUCNBuffers.Rdata")} else{
+if(file.exists(paste0("Iceberg Input Files/IUCNBuffers",Method,".Rdata"))){ load(paste0("Iceberg Input Files/IUCNBuffers",Method,".Rdata"))} else{
   
   Mammal_Shapes <- st_read("~/ShapeFiles")
   Mammal_Shapes$Binomial = str_replace(Mammal_Shapes$binomial, " ", "_")
@@ -80,6 +78,8 @@ if(file.exists("Iceberg Input Files/IUCNBuffers.Rdata")){ load("Iceberg Input Fi
   Mammal_Shapes <- Mammal_Shapes[Mammal_Shapes$Binomial%in%Species,]
   
   IUCNBuffers <- GraskBy(Mammal_Shapes, "Binomial", Distance = 10^6)
+  
+  save(IUCNBuffers, file = paste0("Iceberg Input Files/IUCNBuffers",Method,".Rdata"))
   
 }
 
@@ -90,14 +90,26 @@ for(i in 1:length(Species)){
   Sp = Species[i]
   print(Sp)
   
-  sf1 <- st_cast(IUCNBuffers[[Sp]], "MULTIPOLYGON")
-  
-  r1 <- fasterize::fasterize(sf1, blank)
-  IUCNBufferRasters[[Sp]] <- r1
+  if(Sp%in%names(IUCNBuffers)){
+    
+    sf1 <- st_cast(IUCNBuffers[[Sp]], "MULTIPOLYGON")
+    
+    r1 <- fasterize::fasterize(sf1, blank)
+    IUCNBufferRasters[[Sp]] <- r1
+    
+  } else{
+    
+    r1 <- blank
+    
+    values(r1) <- 1
+    
+    IUCNBufferRasters[[Sp]] <- r1
+    
+  }
   
 }
 
-RasterListc <- mclapply(Species, function(a){
+mclapply(Species, function(a){
   
   print(a)
   
@@ -108,17 +120,15 @@ RasterListc <- mclapply(Species, function(a){
   
   writeRaster(r1,
               file = paste0("Iceberg Input Files/",
-                            Method,"/MaskedCurrents/",a,".tif"), overwrite = T)
+                            Method,"/03_MaskedCurrents/",a,".tif"), overwrite = T)
   
-  return(r1)
-  
-})
+}, mc.preschedule = F)
 
-"Iceberg Input Files/" %>% paste0(Method,"/MaskedCurrents") %>% list.files(full.names = T) %>%
+"Iceberg Input Files/" %>% paste0(Method,"/03_MaskedCurrents") %>% list.files(full.names = T) %>%
   mclapply(raster) -> RasterListc
 
 names(RasterListc) <- Species <-
-  "Iceberg Input Files/" %>% paste0(Method,"/MaskedCurrents") %>% list.files() %>%
+  "Iceberg Input Files/" %>% paste0(Method,"/03_MaskedCurrents") %>% list.files() %>%
   str_remove(".tif")
 
 # 04_Land Use filters #####
@@ -205,14 +215,71 @@ LandUseLossDF %>%
 qplot(LandUseLossDF$PercentLost)
 mean(LandUseLossDF$PercentLost, na.rm = T)
 LandUseLossDF %>% filter(NoLUInfo == 0) %>% pull(PercentLost) %>% mean(na.rm = T)
-save(LandUseLossDF, file = paste0("Iceberg Input Files/", x, "LandUseLoss.Rdata"))
+save(LandUseLossDF, file = paste0("Iceberg Input Files/", Method, "Currents", "LandUseLoss.Rdata"))
 
-"Iceberg Input Files/" %>% paste0(Method,"/04_LandUseClipped/",x) %>% list.files(full.names = T) %>%
+"Iceberg Input Files/" %>% paste0(Method,"/04_LandUseClipped/","Currents") %>% list.files(full.names = T) %>%
   mclapply(raster) -> RasterListd
 
 names(RasterListd) <- Species <- "Iceberg Input Files/" %>%
-  paste0(Method,"/04_LandUseClipped/",x) %>%
+  paste0(Method,"/04_LandUseClipped/","Currents") %>%
   list.files() %>% str_remove(".tif")
+
+# 04b_Continent clipping and area-correcting ####
+
+ContinentRaster <- raster("Iceberg Input Files/continents-final.tif") %>%
+  resample(blank, method = "ngb")
+
+ContinentWhich <- lapply(1:5, function(a) which(values(ContinentRaster)==a))
+names(ContinentWhich) <- c("Africa", "Eurasia", "NAm", "SAm", "Oceania")
+
+"Iceberg Input Files/" %>% paste0(Method,"/04_LandUseClipped/","Currents") %>% list.files(full.names = T) %>%
+  mclapply(raster) -> RasterListd
+
+names(RasterListd) <- Species <- "Iceberg Input Files/" %>%
+  paste0(Method,"/04_LandUseClipped/","Currents") %>%
+  list.files() %>% str_remove(".tif")
+
+paste0("Iceberg Input Files/",Method,"/Final/Currents") %>% list.files %>% str_remove(".tif") %>%
+  setdiff(Species, .) -> ToClip
+
+load("~/LargeFiles/MammalStackFullMercator.Rdata")
+
+NoIUCN <- intersect(ToClip, names(MammalStackFull))[which(sapply(intersect(ToClip, names(MammalStackFull)), function(a) MammalStackFull[[a]] %>% values %>% na.omit %>% length)==0)]
+NoIUCN2 <- setdiff(ToClip, names(MammalStackFull))
+NoIUCN <- union(NoIUCN, NoIUCN2)
+
+ToClip <- setdiff(ToClip, NoIUCN)
+
+mclapply(1:length(ToClip), function(a){
+  
+  Sp <- ToClip[a]
+  
+  r1 <- MammalStackFull[[Sp]]
+  SpWhich <- which(!is.na(values(r1)))
+  ContinentsInhabited <- unique(values(ContinentRaster)[SpWhich])
+  
+  r2 <- RasterListd[[Sp]]*AreaRaster
+  values(r2)[-unlist(ContinentWhich[ContinentsInhabited])] <- NA
+  
+  writeRaster(r2, file = paste0("Iceberg Input Files/",
+                                Method,"/Final/","Currents","/",Sp,".tif"),
+              overwrite = T)
+  
+}, mc.preschedule = F, mc.cores = 45)
+
+mclapply(1:length(NoIUCN), function(a){
+  
+  Sp <- NoIUCN[a]
+  
+  r2 <- RasterListd[[Sp]]*AreaRaster
+  
+  writeRaster(r2, file = paste0("Iceberg Input Files/",
+                                Method,"/Final/","Currents","/",Sp,".tif"),
+              overwrite = T)
+  
+}, mc.preschedule = F)
+
+# ~~~ These are the final currents #####
 
 # 05_Dispersals ####
 
@@ -236,6 +303,7 @@ mclapply(1:length(ToBuffer), function(i){
   Dist <- Dispersals %>% filter(Scientific_name == Sp) %>% pull(disp50)*1000
   
   r1 <- RasterListd[[Sp]]
+  
   r2 <- buffer2(r1, Dist)
   
   writeRaster(r2, file = paste0("Iceberg Input Files/",
@@ -244,7 +312,7 @@ mclapply(1:length(ToBuffer), function(i){
   r3 <- resample(r2, blank, method = "ngb")
   
   writeRaster(r3, file = paste0("Iceberg Input Files/",
-                                Method,"/06_DispersalBuffers_Resampled/",Sp,".tif"),
+                                Method,"/06_DispersalBuffersResampled/",Sp,".tif"),
               overwrite = T)
   
 }, mc.preschedule = F)
@@ -253,7 +321,7 @@ mclapply(1:length(ToBuffer), function(i){
 mclapply(1:length(NotToBuffer), function(i){
   
   Sp <- NotToBuffer[i]
-
+  
   r1 <- RasterListd[[Sp]]
   
   r3 <- resample(r1, blank, method = "ngb")
@@ -292,60 +360,3 @@ paste0("Iceberg Input Files/",
 paste0("Iceberg Input Files/",
        Method,"/06_DispersalBuffers_Resampled/") %>% list.files %>% str_remove(".tif") ->
   names(RasterListf)
-
-# Clipping by continents ####
-
-ContinentRaster <- raster("Iceberg Input Files/continents-final.tif") %>%
-  resample(blank, method = "ngb")
-
-ContinentWhich <- lapply(1:5, function(a) which(values(ContinentRaster)==a))
-names(ContinentWhich) <- c("Africa", "Eurasia", "NAm", "SAm", "Oceania")
-
-"Iceberg Input Files/" %>% paste0(Method,"/04_LandUseClipped/",x) %>% list.files(full.names = T) %>%
-  mclapply(raster) -> RasterListd
-
-names(RasterListd) <- Species <- "Iceberg Input Files/" %>%
-  paste0(Method,"/04_LandUseClipped/",x) %>%
-  list.files() %>% str_remove(".tif")
-
-paste0("Iceberg Input Files/",Method,"/Final/Currents") %>% list.files %>% str_remove(".tif") %>%
-  setdiff(Species, .) -> ToClip
-
-load("~/LargeFiles/MammalStackFullMercator.Rdata")
-
-NoIUCN <- intersect(ToClip, names(MammalStackFull))[which(sapply(intersect(ToClip, names(MammalStackFull)), function(a) MammalStackFull[[a]] %>% values %>% na.omit %>% length)==0)]
-NoIUCN2 <- setdiff(ToClip, names(MammalStackFull))
-NoIUCN <- union(NoIUCN, NoIUCN2)
-
-ToClip <- setdiff(ToClip, NoIUCN)
-
-mclapply(1:length(ToClip), function(a){
-  
-  Sp <- ToClip[a]
-  
-  r1 <- MammalStackFull[[Sp]]
-  SpWhich <- which(!is.na(values(r1)))
-  ContinentsInhabited <- unique(values(ContinentRaster)[SpWhich])
-  
-  r2 <- RasterListd[[Sp]]*AreaRaster
-  values(r2)[-unlist(ContinentWhich[ContinentsInhabited])] <- NA
-  
-  writeRaster(r2, file = paste0("Iceberg Input Files/",
-                                Method,"/Final/",x,"/",Sp,".tif"),
-              overwrite = T)
-  
-}, mc.preschedule = F, mc.cores = 45)
-
-mclapply(1:length(NoIUCN), function(a){
-  
-  Sp <- NoIUCN[a]
-  
-  r2 <- RasterListd[[Sp]]*AreaRaster
-  
-  writeRaster(r2, file = paste0("Iceberg Input Files/",
-                                Method,"/Final/",x,"/",Sp,".tif"),
-              overwrite = T)
-  
-}, mc.preschedule = F)
-
-# ~~~ These are the final currents #####
