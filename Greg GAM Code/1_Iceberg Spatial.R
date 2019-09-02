@@ -4,9 +4,13 @@ library(sf); library(fasterize); library(Matrix);library(ggplot2);
 library(ggregplot); library(raster); library(tidyverse); library(igraph); 
 library(maptools); library(SpRanger); library(parallel)
 
-CORES = 25
+CORES = 65
+
+t1 <- Sys.time()
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
+
+RCPs <- c("2.6","4.5","6.0","8.5")
 
 # Blanks
 blank <- matrix(0,360*2,720*2) # proper resolution
@@ -21,9 +25,6 @@ Sea = which(is.na(raster::values(UniversalBlank)))
 # Grid areas
 AreaRaster <- raster("Iceberg Input Files/LandArea.asc")
 AreaValues <- raster::values(AreaRaster)
-
-Method = "MaxEnt"
-Method = "RangeBags"
 
 Species <- 
   paste0("Iceberg Input Files/","MaxEnt","/GretCDF/Currents") %>% list.files() %>% str_remove(".rds$") %>%
@@ -56,6 +57,8 @@ Species <- Species %>% sort %>% intersect(names(CurrentFiles)) #%>% intersect(na
 
 CurrentFiles <- CurrentFiles[Species]
 FutureFiles <- FutureFiles[Species]
+
+PipelineReps <- LETTERS[1:4]
 
 IcebergAdjList <- list()
 
@@ -166,28 +169,36 @@ object.size(FutureCDFList)/(10^9)
 
 for(Pipeline in LETTERS[1:4]){
   
-  ifelse(Pipeline == "A", "BufferClimateLandUse", 
-         ifelse(Pipeline == "B", "BufferClimate", 
-                ifelse(Pipeline == "C","ClimateLandUse", "Climate")))
+  FuturesVar <- ifelse(Pipeline == "A", "BufferClimateLandUse", 
+                       ifelse(Pipeline == "B", "BufferClimate", 
+                              ifelse(Pipeline == "C","ClimateLandUse", "Climate")))
   
   PredReps[2:5] %>% lapply(function(a){
     
-    FutureCDFList %>% map(FuturesVar) %>% 
-      map(function(a) a*AreaValues[-Sea]) %>% bind_cols() %>% as.data.frame() ->
+    FutureCDFList %>% map(paste0(FuturesVar,".", a)) %>% 
+      map(function(b) b*AreaValues[-Sea]) %>% bind_cols() %>% as.data.frame() ->
       ValueDF
     
     RangeAdj <- PairsWisely(ValueDF, Area = T)
     
     saveRDS(RangeAdj, file = paste0("Iceberg Output Files/", a, "RangeAdj", Pipeline,".rds"))
     
+    return(RangeAdj)
+    
   }) -> IcebergAdjList[[Pipeline]][PredReps[2:5]]
 }
 
+IcebergAdjList <- IcebergAdjList[PipelineReps]
+
+saveRDS(IcebergAdjList, file = paste0("Iceberg Output Files/","IcebergAdjList.rds"))
+
 for(Pipeline in LETTERS[1:4]){
   
+  print(Pipeline)
+  
+  CurrentSpecies <- rownames(IcebergAdjList[[Pipeline]][[1]])
+  
   for(x in 2:length(IcebergAdjList[[Pipeline]])){
-    
-    CurrentSpecies <- rownames(IcebergAdjList[[Pipeline]][[x]])
     
     NewAdj <- IcebergAdjList[[Pipeline]][[x]]
     InsertSpecies <- setdiff(CurrentSpecies, rownames(NewAdj))
@@ -208,3 +219,7 @@ saveRDS(IcebergAdjList, file = paste0("Iceberg Output Files/","IcebergAdjList.rd
 
 lapply(IcebergAdjList, function(a) sapply(range(a)))
 lapply(IcebergAdjList, function(a) sapply(dim(a)))
+
+t2 <- Sys.time() 
+
+t2 - t1

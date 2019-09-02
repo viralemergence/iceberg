@@ -44,7 +44,7 @@ for(Pipeline in c("A", "B")){
   DataList[[Pipeline]]$Cites <- rowSums(log(DataList[[Pipeline]][,c("hDiseaseZACites","hDiseaseZACites.Sp2")] + 1))
   DataList[[Pipeline]]$MinCites <- apply(log(DataList[[Pipeline]][,c("hDiseaseZACites","hDiseaseZACites.Sp2")] + 1),1,min)
   DataList[[Pipeline]]$Domestic <- ifelse(rowSums(cbind(2- DataList[[Pipeline]]$hDom %>% as.factor %>% as.numeric,
-                                                          2- DataList[[Pipeline]]$hDom.Sp2 %>% as.factor %>% as.numeric))>0,1,0)
+                                                        2- DataList[[Pipeline]]$hDom.Sp2 %>% as.factor %>% as.numeric))>0,1,0)
   
   PPList[[Pipeline]] <- list(Spp = list(rank = nlevels(DataList[[Pipeline]]$Sp), 
                                         diag(nlevels(DataList[[Pipeline]]$Sp))))
@@ -62,11 +62,11 @@ for(Pipeline in c("A", "B")){
   
 }
 
-save(DataList, PPList, BAMList, file = paste0("Iceberg Output Files/",Pipeline,"BAMList.Rdata"))
+save(DataList, PPList, BAMList, file = paste0("Iceberg Output Files/","BAMList.Rdata"))
 
 FitList <- PostList <- DrawList <- list()
 
-for(Pipeline in 1:length(BAMList)){
+for(Pipeline in PipelineReps[1:length(BAMList)]){
   
   Model <- BAMList[[Pipeline]]
   
@@ -151,11 +151,13 @@ for(Pipeline in 1:length(BAMList)){
   }
 }
 
-save(FitList, PostList, DrawList, file = paste0("Iceberg Output Files/",Pipeline,"FitList.Rdata"))
+save(FitList, PostList, DrawList, file = paste0("Iceberg Output Files/","FitList.Rdata"))
 
 # Model Output Figure ####
 
 # pdf("GAMOutput.pdf", width = 9, height = 8)
+
+Pipeline == "A"
 
 plot_grid(FitList[[Pipeline]] %>% 
             filter(!is.na(SpaceQuantile)) %>%
