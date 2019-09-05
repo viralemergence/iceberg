@@ -14,7 +14,7 @@ AreaValues <- raster::values(AreaRaster)
 
 IcebergAdjList <- readRDS(paste0("Iceberg Output Files/","IcebergAdjList.rds"))
 AllMammaldf <- readRDS(paste0("Iceberg Output Files/","AllMammaldf.rds"))
-NewEncounterList <= load(paste0("Iceberg Output Files/","NewEncounters.Rdata"))
+load(paste0("Iceberg Output Files/","NewEncounters.Rdata"))
 
 load(paste0("Iceberg Output Files/","AllMammaldf.Rdata"))
 
@@ -237,6 +237,15 @@ for(Pipeline in PipelineReps){
         
         SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
       
+      if(y %% 1000==0){
+        
+        NewIntersectsManual[[Pipeline]] %>% mutate(Overlap = OverlapSums) %>%
+          ggplot(aes(X, Y, fill = Overlap)) + 
+          geom_tile() + coord_fixed() + 
+          ggtitle(paste0(PredReps[x],Pipeline)) #%>% return()
+        
+      }
+      
     }
     
     NewIntersectsManual[[Pipeline]][,paste0("Overlap.",PredReps[x],Pipeline)] <-
@@ -249,3 +258,6 @@ for(Pipeline in PipelineReps){
 }
 
 saveRDS(NewIntersectsManual, file = "Iceberg Output Files/NewIntersects.rds")
+
+
+LongIntersects %>% ggplot()

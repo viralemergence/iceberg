@@ -73,8 +73,8 @@ RangeBagLista <- mclapply(Files, function(a){
   
   if(length(SubFiles)>0) "Y" else "N"
   
-  }, mc.preschedule = F, mc.cores = 45)
-    
+}, mc.preschedule = F, mc.cores = 45)
+
 NullRangeBagRares <- Species[unlist(RangeBagLista) == "N"]
 
 # Range Bag Species ####

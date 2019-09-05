@@ -123,6 +123,7 @@ for(Pipeline in PipelineReps){
     AllPredictions[,"Intercept"] <- AllIntercept
     
     if(Random){
+      
       AllPredList <- mclapply(1:100, function(a){
         
         AllPredictions[,"Spp"] <- sample(SpCoef, N, replace = T) + 
@@ -161,6 +162,17 @@ for(Pipeline in PipelineReps){
 AllMammaldf <- AllMammaldf %>% dplyr::select(-Spp)
 
 save(AllMammaldf, file = paste0("Iceberg Output Files/AllMammaldf.Rdata"))
+
+for(i in 1:length(PipelineReps)){
+  
+  AllMammaldf[, paste0("Delta", SpaceVars[2:5 + (i-1)*5])] <-
+    
+    apply(AllMammaldf[, SpaceVars[2:5 + (i-1)*5]], 2, function(a){
+      a - AllMammaldf[, paste0("Space.Currents", PipelineReps[i])]
+      
+    })
+  
+}
 
 for(i in 1:length(PipelineReps)){
   

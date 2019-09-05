@@ -131,7 +131,7 @@ if(file.exists(paste0("Iceberg Output Files/", "CurrentsRangeAdj", "A",".rds"))&
       print("Getting values!")
       
       CurrentCDFList %>% map(CurrentVar) %>% 
-        map(function(a) a*AreaValues[-Sea]) %>% bind_cols() %>% as.data.frame() ->
+        map(function(a) a*(AreaValues[-Sea])) %>% bind_cols() %>% as.data.frame() ->
         ValueDF
       
       print("Calculating overlap!")
@@ -223,3 +223,91 @@ lapply(IcebergAdjList, function(a) sapply(dim(a)))
 t2 <- Sys.time() 
 
 t2 - t1
+
+# Trying a comparison 
+
+names(FutureCDFList[[1]])
+
+FocalSp <- "Cervus_elaphus"
+
+Pipeline = "D"
+x = 5
+
+NewEncounters <- NewEncountersList[[Pipeline]][[PredReps[x]]]
+
+NewEncounters %>% filter(Sp == FocalSp|Sp2 == FocalSp) -> NewEncounters
+
+NewEncounters %>% filter(Space.Futures1D == max(Space.Futures1D)) %>% pull(Sp2) -> FocalSp2
+
+CurrentCDF <- readRDS(CurrentFiles[[FocalSp]]) %>% as.matrix %>% as.data.frame()
+
+FutureCDF <- readRDS(FutureFiles[[FocalSp]]) %>% as.matrix %>% as.data.frame()
+
+PracticeDF <- bind_cols(CurrentCDF, FutureCDF)
+
+PracticeDF %>% dplyr::select(X,Y,contains(paste0("Climate.Futures"))) %>% 
+  mutate(BufferClimate = PracticeDF$BufferClimate) %>%
+  mutate(Climate = PracticeDF[,"Climate"]) %>%
+  mutate_at(vars(contains(paste0("Climate.Futures"))), function(a){
+    
+    ifelse(a==1&PracticeDF$Climate==0, "Gain",
+           ifelse(a==0&PracticeDF$Climate==1, "Loss",
+                  ifelse(a==1&PracticeDF$Climate==1, "Kept", 0)))
+    
+  }) %>% 
+  mutate_all(function(a) ifelse(a == 0, NA, a)) %>% gather("Key", "Value", 3:Climate) %>% na.omit ->
+  LongDF
+
+ggplot(LongDF, aes(X, Y, fill = Value)) + geom_tile() + facet_wrap(~Key) + coord_fixed()
+
+FocalSp2 <- "Moschus_chrysogaster"
+FocalSp2 <- "Capra_falconeri"
+
+CurrentCDF <- readRDS(CurrentFiles[[FocalSp2]]) %>% as.matrix %>% as.data.frame()
+
+FutureCDF <- readRDS(FutureFiles[[FocalSp2]]) %>% as.matrix %>% as.data.frame()
+
+PracticeDF2 <- bind_cols(CurrentCDF, FutureCDF)
+
+PracticeDF2 %>% dplyr::select(X,Y,contains(paste0("Climate.Futures"))) %>% 
+  mutate(BufferClimate = PracticeDF2$BufferClimate) %>%
+  mutate(Climate = PracticeDF2[,"Climate"]) %>%
+  mutate_at(vars(contains(paste0("Climate.Futures"))), function(a){
+    
+    ifelse(a==1&PracticeDF2$Climate==0, "Gain",
+           ifelse(a==0&PracticeDF2$Climate==1, "Loss",
+                  ifelse(a==1&PracticeDF2$Climate==1, "Kept", 0)))
+    
+  }) %>% 
+  mutate_all(function(a) ifelse(a == 0, NA, a)) %>% gather("Key", "Value", 3:Climate) %>% 
+  na.omit ->
+  LongDF2
+
+ggplot(LongDF2, aes(X, Y, fill = Value)) + geom_tile() + facet_wrap(~Key) + coord_fixed()
+
+LongDF %>% mutate(Sp = FocalSp) %>% bind_rows(LongDF2 %>% mutate(Sp = FocalSp2)) ->
+  LongerDF
+
+WideDF <- left_join(LongDF, LongDF2, by = c("X", "Y"), suffix = c(FocalSp, FocalSp2))
+
+WideDF %>% filter(Climate.Futures1D.Cervus_elaphus%in%c("Gain", "Kept")&Climate.Futures1D.Capra_falconeri%in%c("Gain", "Kept"))
+
+LongerDF %>% ggplot(aes(X, Y, fill = Value)) + geom_tile() + geom_tile() + facet_wrap(~Key) + coord_fixed()
+
+PracticeDF %>% dplyr::select(contains(paste0("Climate.Futures"))) %>% 
+  mutate(BufferClimate = PracticeDF$BufferClimate) %>%
+  mutate(Climate = PracticeDF[,"Climate"]) %>%
+  mutate_at(vars(contains(paste0("Climate.Futures"))), function(a){
+    
+    ifelse(a==1&PracticeDF$Climate==0, "Gain",
+           ifelse(a==0&PracticeDF$Climate==1, "Loss",
+                  ifelse(a==1&PracticeDF$Climate==1, "Kept", 0)))
+    
+  }) %>% 
+  #mutate_all(function(a) ifelse(a == 0, NA, a)) %>%
+  na.omit() %>% 
+  apply(2, table) -> Totals
+
+lapply(Totals, function(a) a/last(unlist(Totals))*100)
+
+unlist(Totals)/last(unlist(Totals))

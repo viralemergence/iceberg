@@ -72,10 +72,10 @@ Root <- paste0("Iceberg Input Files/", Method,"/01_Raw")
 
 # Setting raster standards ####
 
-XMin <- blank %>% extent %>% extract(1)
-XMax <- blank %>% extent %>% extract(2)
-YMin <- blank %>% extent %>% extract(3)
-YMax <- blank %>% extent %>% extract(4)
+XMin <- blank %>% extent %>% magrittr::extract(1)
+XMax <- blank %>% extent %>% magrittr::extract(2)
+YMin <- blank %>% extent %>% magrittr::extract(3)
+YMax <- blank %>% extent %>% magrittr::extract(4)
 
 NCol <- ncol(blank)
 NRow <- nrow(blank)
