@@ -5,14 +5,11 @@
 
 CORES <- 25
 
+t1 <- Sys.time()
+
 library(tidyverse); library(raster); library(parallel); library(sf); library(Matrix); library(magrittr)
 
-Method = "MaxEnt"
-# Method = "RangeBags"
-
-# for(Method in c("RangeBags", "MaxEnt")){
-
-paste0("Iceberg Input Files/", Method, "/GretCDF/Currents") %>% list.files() %>% 
+paste0("Iceberg Input Files/GretCDF/Currents") %>% list.files() %>% 
   str_remove(".rds$") ->
   Species
 
@@ -60,11 +57,11 @@ names(LandUseList) <- PredReps[2:5]
 # Continents ####
 print("Continents!")
 
-ContinentRaster <- raster("Iceberg Input Files/continents-final.tif") %>%
+ContinentRaster <- raster("Iceberg Input Files/continents-greenland.tif") %>%
   resample(blank, method = "ngb")
 
-ContinentWhich <- lapply(1:5, function(a) which(values(ContinentRaster)==a))
-names(ContinentWhich) <- c("Africa", "Eurasia", "NAm", "SAm", "Oceania")
+ContinentWhich <- lapply(1:6, function(a) which(values(ContinentRaster)==a))
+names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "NAm", "Oceania", "SAm")
 
 # 01_Processing Currents ####
 
@@ -82,7 +79,7 @@ NRow <- nrow(blank)
 
 i = 1  
 
-Processed <- paste0("Iceberg Input Files/", Method,"/GretCDF/","Futures") %>% 
+Processed <- paste0("Iceberg Input Files/GretCDF/","Futures") %>% 
   list.files %>% str_remove(".rds$")
 
 (ToProcess <- setdiff(Species, Processed)) %>% length
@@ -153,7 +150,7 @@ mclapply(1:length(ToProcess), function(i){
   
   # Importing currents grid ####
   
-  CurrentsGretCDF <- readRDS(paste0("Iceberg Input Files/", Method, "/GretCDF/Currents/", Sp, ".rds"))
+  CurrentsGretCDF <- readRDS(paste0("Iceberg Input Files/GretCDF/Currents/", Sp, ".rds"))
   
   GretCDF <- GretCDF %>% slice(-Sea)
   
@@ -188,7 +185,8 @@ mclapply(1:length(ToProcess), function(i){
   GretCDF %>% bind_cols(FillDF) ->
     GretCDF
   
-  GretCDF %>% as.matrix %>% as("dgCMatrix") %>% saveRDS(file = paste0("Iceberg Input Files/", Method,"/GretCDF/Futures/",Sp,".rds"))
+  GretCDF %>% as.matrix %>% as("dgCMatrix") %>% 
+    saveRDS(file = paste0("Iceberg Input Files/GretCDF/Futures/",Sp,".rds"))
   
 }, mc.preschedule = F, mc.cores = CORES)
 
@@ -201,7 +199,7 @@ t2 - t1
 Sp <- "Bos_javanicus"
 Sp <- "Antilocapra_americana"
 
-CDF <- readRDS(paste0("~/Albersnet/Iceberg Input Files/MaxEnt/GretCDF/Futures/",Sp,".rds")) %>%
+CDF <- readRDS(paste0("~/Albersnet/Iceberg Input Files/GretCDF/Futures/",Sp,".rds")) %>%
   as.matrix %>% as.data.frame()
 
 CDF %>% colSums()

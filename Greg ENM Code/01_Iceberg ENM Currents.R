@@ -5,7 +5,7 @@
 
 library(tidyverse); library(raster); library(parallel); library(sf); library(Matrix); library(magrittr); library(SpRanger); library(cowplot)
 
-CORES <- 20
+CORES <- 45
 
 t1 <- Sys.time()
 
@@ -16,11 +16,19 @@ Method = "MaxEnt"
 
 source("00_Iceberg Species Dropping.R")
 
-# for(Method in c("RangeBags", "MaxEnt")){
+paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
+  list.files(full.names = T) %>% 
+  append(paste0("Iceberg Input Files/","RangeBags","/01_Raw/Currents") %>% list.files(full.names = T)) ->
+  FullFiles
 
-print(Method)
+paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
+  list.files() %>% str_remove(".rds$") %>%
+  append(paste0("Iceberg Input Files/","RangeBags","/01_Raw/Currents") %>% list.files() %>% str_remove(".rds$")) ->
+  names(FullFiles)
 
-Species <- SpeciesList[[Method]] %>% sort()
+Species <- SpeciesList %>% unlist %>% sort()
+
+Files <- FullFiles[Species]
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
 
@@ -60,16 +68,17 @@ landuse2017 <- brick('Iceberg Input Files/landuse2017.grd')
 # Continents ####
 print("Continents!")
 
-ContinentRaster <- raster("Iceberg Input Files/continents-final.tif") %>%
+ContinentRaster <- raster("Iceberg Input Files/continents-greenland.tif") %>%
   resample(blank, method = "ngb")
 
-ContinentWhich <- lapply(1:5, function(a) which(values(ContinentRaster)==a))
-names(ContinentWhich) <- c("Africa", "Eurasia", "NAm", "SAm", "Oceania")
+ContinentWhich <- lapply(1:6, function(a) which(values(ContinentRaster)==a))
+names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "NAm", "Oceania", "SAm")
 
 # IUCN ranges for continent clipping ####
 print("IUCN!")
 
 load("~/LargeFiles/MammalStackFullMercator.Rdata")
+load("Iceberg Input Files/IUCNBuffers.Rdata")
 
 IUCNSp <- names(MammalStackFull) %>% intersect(Species)
 MammalStackFull <- MammalStackFull[IUCNSp]
@@ -99,7 +108,7 @@ NRow <- nrow(blank)
 
 i = 1  
 
-Processed <- paste0("Iceberg Input Files/", Method,"/GretCDF/","Currents") %>% 
+Processed <- paste0("Iceberg Input Files/GretCDF/","Currents") %>% 
   list.files %>% str_remove(".rds$")
 
 ToProcess <- setdiff(Species, Processed)
@@ -112,11 +121,11 @@ mclapply(1:length(ToProcess), function(i){
   
   print(Sp)
   
-  SubFiles <- paste0(Root,"/",Sp) %>% list.files
+  SubFiles <- Files[[Sp]] %>% list.files(full.names = T)
   
   if(length(SubFiles)>0){
     
-    RasterLista <- raster(paste0(Root,"/",Sp,"/",SubFiles[1]))
+    RasterLista <- raster(SubFiles[1])
     
     # 02_Resampling rasters ####
     
@@ -127,6 +136,71 @@ mclapply(1:length(ToProcess), function(i){
       Y = seq(from = YMax, to = YMin, length.out = NRow) %>% rep(each = NCol),
       Climate = as.numeric(!is.na(values(RasterLista)))
     ) 
+    
+    # IUCN Buffer clipping ####
+    
+    if(Sp%in%IUCNSp){
+      
+      if(nrow(IUCNBuffers[[Sp]])>0){
+        
+        sf1 <- st_cast(IUCNBuffers[[Sp]], "MULTIPOLYGON")
+        r1 <- fasterize::fasterize(sf1, blank)
+        
+        IUCNValues <- values(r1)
+        
+        if(length(IUCNValues)>0){
+          
+          GretCDF$IUCN <- 0
+          GretCDF[which(!is.na(IUCNValues)),"IUCN"] <- 1
+          
+        }else{
+          
+          GretCDF$IUCN <- 1
+          
+        }
+        
+      } else{
+        
+        GretCDF$IUCN <- 1
+        
+      }
+      
+      
+    } else{
+      
+      GretCDF$IUCN <- 1
+      
+    }
+    
+    GretCDF[GretCDF$IUCN == 0, c("Climate")] <- 0
+    
+    # Continent clipping ####
+    
+    if(Sp%in%IUCNSp){
+      
+      r1 <- MammalStackFull[[Sp]]
+      SpWhich <- which(!is.na(values(r1)))
+      ContinentsInhabited <- unique(values(ContinentRaster)[SpWhich])
+      
+      if(length(ContinentsInhabited)>0){
+        
+        GretCDF$Continent <- 0
+        
+        GretCDF[unlist(ContinentWhich[ContinentsInhabited]),"Continent"] <- 1
+        
+      }else{
+        
+        GretCDF$Continent <- 1
+        
+      }
+      
+    } else{
+      
+      GretCDF$Continent <- 1
+      
+    }
+    
+    GretCDF[GretCDF$Continent == 0, c("Climate")] <- 0
     
     # Land Use filters #####
     
@@ -160,34 +234,6 @@ mclapply(1:length(ToProcess), function(i){
     }
     
     GretCDF$LandUse <- Habitable
-    
-    # Continent clipping ####
-    
-    if(Sp%in%IUCNSp){
-      
-      r1 <- MammalStackFull[[Sp]]
-      SpWhich <- which(!is.na(values(r1)))
-      ContinentsInhabited <- unique(values(ContinentRaster)[SpWhich])
-      
-      if(length(ContinentsInhabited)>0){
-        
-        GretCDF$Continent <- 0
-        
-        GretCDF[unlist(ContinentWhich[ContinentsInhabited]),"Continent"] <- 1
-        
-      }else{
-        
-        GretCDF$Continent <- 1
-        
-      }
-      
-    } else{
-      
-      GretCDF$Continent <- 1
-      
-    }
-    
-    GretCDF[GretCDF$Continent == 0, c("Climate")] <- 0
     
     GretCDF$ClimateLandUse <- as.numeric(rowSums(GretCDF[,c("Climate","LandUse")])>1)
     
@@ -226,7 +272,7 @@ mclapply(1:length(ToProcess), function(i){
     
     GretCDF %>% slice(-Sea) %>% 
       as.matrix %>% as("dgCMatrix") %>% 
-      saveRDS(file = paste0("Iceberg Input Files/", Method, "/GretCDF/Currents/", Sp, ".rds"))
+      saveRDS(file = paste0("Iceberg Input Files/GretCDF/Currents/", Sp, ".rds"))
     
   }
   
@@ -235,8 +281,6 @@ mclapply(1:length(ToProcess), function(i){
 t2 <- Sys.time()
 
 print(t2 - t1)
-
-# }
 
 
 # Troubleshooting ####
@@ -248,7 +292,7 @@ iucndat %>%
   mutate(name = name %>% str_replace(" ", "_")) ->
   Habitats
 
-list.files(paste0("~/Albersnet/Iceberg Input Files/RangeBags/GretCDF/Currents/")) %>% str_remove(".rds") -> 
+list.files(paste0("~/Albersnet/Iceberg Input Files/GretCDF/Currents")) %>% str_remove(".rds") -> 
   Species
 
 lapply(Species, function(a){
@@ -258,8 +302,10 @@ names(HabitatList) <- Species
 HabitatList[sapply(HabitatList, length)>0]
 
 Sp <- "Microtus_daghestanicus"
+Sp <- "Acinonyx_jubatus"
+Sp <- "Lycaon_pictus"
 
-CDF <- readRDS(paste0("~/Albersnet/Iceberg Input Files/RangeBags/GretCDF/Currents/",Sp,".rds")) %>%
+CDF <- readRDS(paste0("~/Albersnet/Iceberg Input Files/GretCDF/Currents/",Sp,".rds")) %>%
   as.matrix %>% as.data.frame()
 
 CDF %>% colSums()

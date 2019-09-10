@@ -112,3 +112,41 @@ OnlyRangeBags <- setdiff(FullRangeBagSp, FullMaxEntSp)
 
 SpeciesList <- list(MaxEnt = FullMaxEntSp, 
                     RangeBags = FullRangeBagSp)
+
+stop()
+
+# Dispersals ####
+
+Dispersals <- read.csv("Iceberg Input Files/Data for dispersal.csv", header = T)
+
+Dispersals <- Dispersals %>% filter(!is.na(Scientific_name), !is.na(disp50))
+DispersalSp <- Dispersals$Scientific_name <- Dispersals$Scientific_name %>% str_replace(" ", "_")
+
+Panth1 %>% mutate(DispersalKnown = as.numeric(Sp%in%DispersalSp)) %>% 
+  filter(Sp%in%unlist(SpeciesList)) %>% ggregplot::ggMMplot("hOrder", "DispersalKnown")
+
+lapply(NewEncountersList, function(a){
+  
+  lapply(a, function(b){
+    
+    AllSp <- c(b$Sp, b$Sp2)
+    
+    table(AllSp%in%DispersalSp)/sum(table(AllSp%in%DispersalSp))
+    
+  })
+  
+})
+
+
+lapply(NewEncountersList, function(a){
+  
+  lapply(a, function(b){
+    
+    b %>% filter(!Sp%in%DispersalSp|!Sp2%in%DispersalSp) %>% nrow %>% magrittr::divide_by(nrow(b))
+    
+  })
+  
+})
+
+
+

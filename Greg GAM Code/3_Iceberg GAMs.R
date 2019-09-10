@@ -2,13 +2,15 @@
 
 # Running Frequentist GAMS
 
-# Rscript "Iceberg GAMs.R"
+# Rscript "3_Iceberg GAMs.R"
 
 library(mgcv); library(tidyverse); library(ggregplot); library(MASS); library(cowplot); library(colorspace)
 library(ggregplot); library(parallel); library(igraph); 
 library(Matrix); library(ROCR)
 
-Pipeline = "A"
+# source("Final Iceberg Code/2_Iceberg Data Import.R")
+
+PipelineReps = LETTERS[1:4]
 
 Resps <- c("VirusBinary","RNA","DNA","Vector","NVector")
 
@@ -157,7 +159,7 @@ save(FitList, PostList, DrawList, file = paste0("Iceberg Output Files/","FitList
 
 # pdf("GAMOutput.pdf", width = 9, height = 8)
 
-Pipeline == "A"
+Pipeline == "B"
 
 plot_grid(FitList[[Pipeline]] %>% 
             filter(!is.na(SpaceQuantile)) %>%

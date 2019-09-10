@@ -27,28 +27,23 @@ AreaRaster <- raster("Iceberg Input Files/LandArea.asc")
 AreaValues <- raster::values(AreaRaster)
 
 Species <- 
-  paste0("Iceberg Input Files/","MaxEnt","/GretCDF/Currents") %>% list.files() %>% str_remove(".rds$") %>%
-  append(paste0("Iceberg Input Files/","RangeBags","/GretCDF/Currents") %>% list.files() %>% str_remove(".rds$")) %>% 
+  paste0("Iceberg Input Files/GretCDF/Currents") %>% list.files() %>% str_remove(".rds$") %>%
   sort
 
-paste0("Iceberg Input Files/","MaxEnt","/GretCDF/Currents") %>% 
-  list.files(full.names = T) %>% 
-  append(paste0("Iceberg Input Files/","RangeBags","/GretCDF/Currents") %>% list.files(full.names = T)) ->
+"Iceberg Input Files/GretCDF/Currents" %>% 
+  list.files(full.names = T) ->
   CurrentFiles
 
-paste0("Iceberg Input Files/","MaxEnt","/GretCDF/Currents") %>% 
-  list.files() %>% str_remove(".rds$") %>%
-  append(paste0("Iceberg Input Files/","RangeBags","/GretCDF/Currents") %>% list.files() %>% str_remove(".rds$")) ->
+paste0("Iceberg Input Files/GretCDF/Currents") %>% 
+  list.files() %>% str_remove(".rds$") ->
   names(CurrentFiles)
 
-paste0("Iceberg Input Files/","MaxEnt","/GretCDF/Futures") %>% 
-  list.files(full.names = T) %>% 
-  append(paste0("Iceberg Input Files/","RangeBags","/GretCDF/Futures") %>% list.files(full.names = T)) ->
+paste0("Iceberg Input Files/GretCDF/Futures") %>% 
+  list.files(full.names = T) ->
   FutureFiles
 
-paste0("Iceberg Input Files/","MaxEnt","/GretCDF/Futures") %>% 
-  list.files() %>% str_remove(".rds$") %>%
-  append(paste0("Iceberg Input Files/","RangeBags","/GretCDF/Futures") %>% list.files() %>% str_remove(".rds$")) ->
+paste0("Iceberg Input Files/GretCDF/Futures") %>% 
+  list.files() %>% str_remove(".rds$") ->
   names(FutureFiles)
 
 CurrentCDFList <- FutureCDFList <- list()
@@ -87,8 +82,6 @@ if(file.exists(paste0("Iceberg Output Files/", "CurrentsRangeAdj", "A",".rds"))&
   object.size(CurrentCDFList)/(10^9)
   
   names(CurrentCDFList) <- Species
-  
-  # saveRDS(CurrentCDFList, file = paste0("Iceberg Output Files/","CurrentCDFList.rds"))
   
   for(Pipeline in LETTERS[1:4]){
     
@@ -151,6 +144,7 @@ if(file.exists(paste0("Iceberg Output Files/", "CurrentsRangeAdj", "A",".rds"))&
 }
 
 # Futures ####
+
 print("Doing the futures!")
 
 FutureCDFList <- mclapply(1:length(Species), function(a){
@@ -220,15 +214,32 @@ saveRDS(IcebergAdjList, file = paste0("Iceberg Output Files/","IcebergAdjList.rd
 lapply(IcebergAdjList, function(a) sapply(range(a)))
 lapply(IcebergAdjList, function(a) sapply(dim(a)))
 
-t2 <- Sys.time() 
+stop()
+)
 
-t2 - t1
+1:length(Species) %>% mclapply(function(a){
+  
+  Sp <- Species[a]
+  
+  CDF <-  CurrentCDFList[[Sp]] %>% 
+    bind_cols(FutureCDFList[[Sp]][,setdiff(names(FutureCDFList[[Sp]]),names(CurrentCDFList[[Sp]]))])
+  
+  lapply(PredReps[2:5], function(b){
+    
+    SubCDF <- CDF %>% 
+      dplyr::select(-starts_with("LandUse"), ends_with(b))
+    
+  })
+  
+})
+
+
 
 # Trying a comparison 
 
 names(FutureCDFList[[1]])
 
-FocalSp <- "Cervus_elaphus"
+FocalSp <- "Abrothris_lanosus"
 
 Pipeline = "D"
 x = 5
