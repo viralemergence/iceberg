@@ -57,15 +57,29 @@ names(LandUseList) <- PredReps[2:5]
 # Continents ####
 print("Continents!")
 
-ContinentRaster <- raster("Iceberg Input Files/continents-greenland.tif") %>%
+ContinentRaster <- raster("Iceberg Input Files/continents-madagascar.tif") %>%
   resample(blank, method = "ngb")
 
-ContinentWhich <- lapply(1:6, function(a) which(values(ContinentRaster)==a))
-names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "NAm", "Oceania", "SAm")
+ContinentWhich <- lapply(1:max(values(ContinentRaster), na.rm = T), function(a) which(values(ContinentRaster)==a))
+names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "Madagascar", "NAm", "Oceania", "SAm")
 
 # 01_Processing Currents ####
 
-Root <- paste0("Iceberg Input Files/", Method,"/01_Raw")
+paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
+  list.files(full.names = T) %>% 
+  append(paste0("Iceberg Input Files/","RangeBags","/01_Raw/Currents") %>% list.files(full.names = T)) ->
+  FullFiles
+
+paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
+  list.files() %>% str_remove(".rds$") %>%
+  append(paste0("Iceberg Input Files/","RangeBags","/01_Raw/Currents") %>% list.files() %>% str_remove(".rds$")) ->
+  names(FullFiles)
+
+Files <- FullFiles[Species]
+
+Files %>% str_split("/") %>% map(2) %>% unlist ->
+  Methods
+names(Methods) <- Species
 
 # Setting raster standards ####
 
@@ -94,8 +108,10 @@ mclapply(1:length(ToProcess), function(i){
   
   RasterLista <- lapply(PredReps[2:5], function(a){
     
-    SubFiles <- paste0(Root,"/",a,"/",Sp) %>% list.files
-    r1 <- raster(paste0(Root,"/",a,"/",Sp,"/",SubFiles[1]))
+    SubFiles <- paste0("Iceberg Input Files/",Methods[Sp],"/01_Raw/",a,"/",Sp) %>% 
+      list.files(full.names = T)
+    
+    r1 <- raster(SubFiles[[1]])
     raster::resample(r1, blank, method = 'ngb')
     
   })

@@ -11,9 +11,6 @@ t1 <- Sys.time()
 
 print("Dropping Species!")
 
-Method = "MaxEnt"
-# Method = "RangeBags"
-
 source("00_Iceberg Species Dropping.R")
 
 paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
@@ -68,11 +65,11 @@ landuse2017 <- brick('Iceberg Input Files/landuse2017.grd')
 # Continents ####
 print("Continents!")
 
-ContinentRaster <- raster("Iceberg Input Files/continents-greenland.tif") %>%
+ContinentRaster <- raster("Iceberg Input Files/continents-madagascar.tif") %>%
   resample(blank, method = "ngb")
 
-ContinentWhich <- lapply(1:6, function(a) which(values(ContinentRaster)==a))
-names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "NAm", "Oceania", "SAm")
+ContinentWhich <- lapply(1:max(values(ContinentRaster), na.rm = T), function(a) which(values(ContinentRaster)==a))
+names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "Madagascar", "NAm", "Oceania", "SAm")
 
 # IUCN ranges for continent clipping ####
 print("IUCN!")
@@ -85,16 +82,21 @@ MammalStackFull <- MammalStackFull[IUCNSp]
 
 # Dispersals ####
 
-Dispersals <- read.csv("Iceberg Input Files/Data for dispersal.csv", header = T)
+Dispersals <- read.csv("Iceberg Input Files/Data for dispersal_Corrected.csv", header = T)
 
 Dispersals <- Dispersals %>% filter(!is.na(Scientific_name), !is.na(disp50))
 Dispersals$Scientific_name <- Dispersals$Scientific_name %>% str_replace(" ", "_")
 
 ToBuffer <- intersect(Species, Dispersals$Scientific_name)
 
-# 01_Processing Currents ####
+# Adding in exception for bats ####
 
-Root <- paste0("Iceberg Input Files/", Method,"/01_Raw/","Currents")
+Panth1 %>% filter(hOrder == "Chiroptera") %>% pull(Sp) ->
+  BatSpecies
+
+ToBuffer <- setdiff(ToBuffer, BatSpecies)
+
+# 01_Processing Currents ####
 
 # Setting raster standards ####
 
@@ -134,7 +136,9 @@ mclapply(1:length(ToProcess), function(i){
     GretCDF <- data.frame(
       X = seq(from = XMin, to = XMax, length.out = NCol) %>% rep(NRow),
       Y = seq(from = YMax, to = YMin, length.out = NRow) %>% rep(each = NCol),
+      
       Climate = as.numeric(!is.na(values(RasterLista)))
+      
     ) 
     
     # IUCN Buffer clipping ####
@@ -181,6 +185,13 @@ mclapply(1:length(ToProcess), function(i){
       r1 <- MammalStackFull[[Sp]]
       SpWhich <- which(!is.na(values(r1)))
       ContinentsInhabited <- unique(values(ContinentRaster)[SpWhich])
+      
+      if(Sp == "Canis_lupus"){
+        
+        ContinentsInhabited <- 
+          ContinentsInhabited %>% setdiff(1)
+        
+      }
       
       if(length(ContinentsInhabited)>0){
         
@@ -278,41 +289,8 @@ mclapply(1:length(ToProcess), function(i){
   
 }, mc.preschedule = F, mc.cores = CORES)
 
+stop()
+
 t2 <- Sys.time()
 
 print(t2 - t1)
-
-
-# Troubleshooting ####
-
-iucndat <- read.csv('Iceberg Input Files/IucnHabitatData.csv')
-convcodes <- read.csv('Iceberg Input Files/IUCN_LUH_conversion_table.csv')
-iucndat %>%
-  left_join(convcodes, by = c("code" = "IUCN_hab")) %>%
-  mutate(name = name %>% str_replace(" ", "_")) ->
-  Habitats
-
-list.files(paste0("~/Albersnet/Iceberg Input Files/GretCDF/Currents")) %>% str_remove(".rds") -> 
-  Species
-
-lapply(Species, function(a){
-  Habitats %>% filter(name == a) %>% pull(LUH)
-}) -> HabitatList
-names(HabitatList) <- Species
-HabitatList[sapply(HabitatList, length)>0]
-
-Sp <- "Microtus_daghestanicus"
-Sp <- "Acinonyx_jubatus"
-Sp <- "Lycaon_pictus"
-
-CDF <- readRDS(paste0("~/Albersnet/Iceberg Input Files/GretCDF/Currents/",Sp,".rds")) %>%
-  as.matrix %>% as.data.frame()
-
-CDF %>% colSums()
-
-CDF %>% gather(key = "Key", value = "Value", -X, -Y) %>% 
-  mutate(Key = factor(Key, levels = unique(Key))) %>%
-  ggplot(aes(X, Y, fill = Value)) + 
-  coord_fixed() + theme_cowplot() +
-  geom_tile() + facet_wrap(~Key)
-

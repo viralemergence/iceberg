@@ -206,22 +206,30 @@ NewEncountersList <-
 
 names(NewEncountersList) <- PipelineReps
 
+# Making new encounters ####
+
+NewEncountersList <- 
+  
+  lapply(PipelineReps, function(b){
+    
+    l1 <- lapply(PredReps[2:5], function(a){
+      
+      AllMammaldf[AllMammaldf[,paste0("Space.Currents",b)]==0&
+                    AllMammaldf[,paste0("Space.", a, b)]>0,]
+      
+    })
+    
+    names(l1) <- PredReps[2:5]
+    
+    return(l1)
+    
+  })
+
+names(NewEncountersList) <- PipelineReps
+
 save(AllMammaldf, file = paste0("Iceberg Output Files/AllMammaldf.Rdata"))
 save(NewEncountersList, file = paste0("Iceberg Output Files/NewEncounters.Rdata"))
 
-AMDF1 <- AllMammaldf %>% rename(hOrder = hOrder.x, hFamily = hFamily.x) %>% 
-  dplyr::select(-ends_with(".y")) %>% 
-  dplyr::select(-ends_with(".x"))
-
-AMDF2 <- AllMammaldf %>% 
-  rename(hOrder = hOrder.y, hFamily = hFamily.y,
-         Sp = Sp2, Sp2 = Sp) %>% 
-  dplyr::select(-ends_with(".y")) %>% 
-  dplyr::select(-ends_with(".x"))
-
-AllMammalLong <- bind_rows(AMDF1, AMDF2)
-
-
-
+??pivot_wider
 
 

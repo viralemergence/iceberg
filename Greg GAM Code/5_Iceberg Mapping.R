@@ -219,7 +219,7 @@ FuturesBase <- c(A = "BufferClimateLandUse",
 # NewIntersectsManual <- list()
 NewIntersectsManual <- FutureCDFList[[1]] %>% dplyr::select(X, Y)
 
-for(Pipeline in rev(PipelineReps)){
+for(Pipeline in PipelineReps){
   
   print(Pipeline)
   
@@ -234,7 +234,7 @@ for(Pipeline in rev(PipelineReps)){
       bind_cols %>% as.data.frame() ->
       ValueDF
     
-    OverlapSums <- OverlapSharingSums <- rep(0, nrow(ValueDF))
+    OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
     
     for(y in 1:nrow(NewEncounters)){
       
@@ -251,6 +251,10 @@ for(Pipeline in rev(PipelineReps)){
         
         SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
       
+      DeltaOverlapSharing <- DeltaOverlapSharing +
+        
+        SubSums*NewEncounters[y, paste0("DeltaSharing.",PredReps[x],Pipeline)]
+      
     }
     
     NewIntersectsManual[,paste0("Overlap.",PredReps[x],Pipeline)] <-
@@ -258,6 +262,9 @@ for(Pipeline in rev(PipelineReps)){
     
     NewIntersectsManual[,paste0("OverlapSharing.",PredReps[x],Pipeline)] <-
       OverlapSharingSums
+    
+    NewIntersectsManual[,paste0("DeltaOverlapSharing.",PredReps[x],Pipeline)] <-
+      DeltaOverlapSharing
     
     saveRDS(NewIntersectsManual, file = "Iceberg Output Files/NewIntersects.rds")
     

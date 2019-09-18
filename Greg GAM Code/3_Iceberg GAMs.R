@@ -155,293 +155,300 @@ for(Pipeline in PipelineReps[1:length(BAMList)]){
 
 save(FitList, PostList, DrawList, file = paste0("Iceberg Output Files/","FitList.Rdata"))
 
-# Model Output Figure ####
+Output = T
 
-# pdf("GAMOutput.pdf", width = 9, height = 8)
-
-Pipeline == "B"
-
-plot_grid(FitList[[Pipeline]] %>% 
-            filter(!is.na(SpaceQuantile)) %>%
-            ggplot(aes(Phylo, Fit, colour = SpaceQuantile)) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = SpaceQuantile), alpha = 0.2, colour = NA) +
-            geom_line(aes(group = as.factor(Space))) +
-            labs(y = "Viral sharing probability", x = "Phylogenetic similarity", 
-                 colour = "Geographic overlap", fill = "Geographic overlap") +
-            lims(x = c(0,1), y = c(0,1)) +
-            coord_fixed() +
-            scale_color_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = 5:8)  +
-            scale_fill_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = 5:8)  +
-            theme(legend.position = c(0.1, 0.8), 
-                  legend.title = element_text(size = 10),
-                  legend.background = element_rect(colour = "dark grey")) +
-            geom_rug(data = DataList[[1]], inherit.aes = F, aes(x = Phylo), alpha = 0.01),
-          
-          FitList[[Pipeline]] %>% 
-            filter(!is.na(PhyloQuantile)) %>%
-            ggplot(aes(Space, Fit, colour = PhyloQuantile)) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = PhyloQuantile), alpha = 0.2, colour = NA) +
-            geom_line(aes(group = as.factor(Phylo))) +
-            labs(y = "Viral sharing probability", x = "Geographic overlap", 
-                 colour = "Phylogenetic similarity", fill = "Phylogenetic similarity") +
-            lims(x = c(0,1), y = c(0,1)) +
-            coord_fixed() +
-            scale_color_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = 5:8)  +
-            scale_fill_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = 5:8)  +
-            theme(legend.position = c(0.1, 0.8), 
-                  legend.title = element_text(size = 10),
-                  legend.background = element_rect(colour = "dark grey")) +
-            geom_rug(data = DataList[[1]], inherit.aes = F, aes(x = Space), alpha = 0.01),
-          
-          FitList[[Pipeline]] %>% 
-            filter(!Phylo == last(unique(Phylo)),
-                   !Space == last(unique(Space))) %>%
-            ggplot(aes(Space, Phylo)) + 
-            geom_tile(aes(fill = Fit)) + 
-            labs(x = "Geographic overlap", 
-                 y = "Phylogenetic similarity",
-                 fill = "Viral sharing\nprobability") +
-            #ggtitle("Tensor Field") +
-            lims(x = c(0,1), y = c(0,1)) +
-            coord_fixed() +
-            theme(legend.position = "bottom",
-                  legend.title = element_text(size = 10)) +
-            geom_contour(aes(z = Fit), colour = "white", alpha = 0.8) + 
-            metR::geom_text_contour(aes(z = Fit), colour = "white", size = 2.5, hjust = 0.5, vjust = 1.1, check_overlap = T) +
-            scale_fill_continuous_sequential(palette = "ag_GrnYl",
-                                             limits = c(0,1),
-                                             breaks = c(0,0.5,1)),
-          
-          DataList[[Pipeline]] %>%
-            ggplot(aes(Space, Phylo)) + 
-            labs(x = "Geographic overlap", 
-                 y = "Phylogenetic similarity") +
-            #ggtitle("Data Distribution") +
-            scale_fill_continuous_sequential(palette = "Heat 2", breaks = c(0:2*5)) +
-            lims(x = c(0,1), y = c(0,1)) +
-            coord_fixed() +
-            theme(legend.position = "bottom") +
-            geom_hex(aes(fill = stat(log(count)))),
-          
-          nrow = 2, 
-          rel_heights = c(1,1.23), 
-          labels = "AUTO") 
-
-dev.off()
-
-Resps <- c("VirusBinary")#,"RNA","DNA","Vector","NVector")
-
-# Simulating the predicted networks ####
-
-# Doing the simulating with random effects #####
-
-PredList1 <- list()
-
-Predictions1 <- predict.bam(BAMList[[1]], 
-                            newdata = DataList[[1]],
-                            type = "terms")
-
-Intercept1 <- attr(Predictions1, "constant")
-
-Predictions1 <- Predictions1 %>% as.data.frame()
-
-Predictions1$Intercept <- Intercept1
-
-N = nrow(DataList[[1]])
-
-PredList1 <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
+if(Output){
   
-  BinPred <- rbinom(n = N,
-                    prob = logistic(rowSums(Predictions1)),
-                    size  = 1)
+  # Model Output Figure ####
   
-  BinPred
+  # pdf("GAMOutput.pdf", width = 9, height = 8)
   
-}, mc.cores = 10)
-
-PredDF1 <- data.frame(PredList1)
-
-FinalHostMatrix$PredVirus1 <- apply(PredDF1, 1, mean)
-FinalHostMatrix$PredVirus1Q <- cut(FinalHostMatrix$PredVirus1,
-                                   breaks = c(-1:10/10),
-                                   labels = c(0:10/10))
-
-SimNets1 <- mclapply(1:length(PredList1), function(i){
+  Pipeline == "A"
   
-  AssMat <- matrix(NA, 
-                   nrow = nlevels(DataList[[1]]$Sp), 
-                   ncol = nlevels(DataList[[1]]$Sp))
+  plot_grid(FitList[[Pipeline]] %>% 
+              filter(!is.na(SpaceQuantile)) %>%
+              ggplot(aes(Phylo, Fit, colour = SpaceQuantile)) + 
+              geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = SpaceQuantile), alpha = 0.2, colour = NA) +
+              geom_line(aes(group = as.factor(Space))) +
+              labs(y = "Viral sharing probability", x = "Phylogenetic similarity", 
+                   colour = "Geographic overlap", fill = "Geographic overlap") +
+              lims(x = c(0,1), y = c(0,1)) +
+              coord_fixed() +
+              scale_color_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = 5:8)  +
+              scale_fill_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = 5:8)  +
+              theme(legend.position = c(0.1, 0.8), 
+                    legend.title = element_text(size = 10),
+                    legend.background = element_rect(colour = "dark grey")) +
+              geom_rug(data = DataList[[1]], inherit.aes = F, aes(x = Phylo), alpha = 0.01),
+            
+            FitList[[Pipeline]] %>% 
+              filter(!is.na(PhyloQuantile)) %>%
+              ggplot(aes(Space, Fit, colour = PhyloQuantile)) + 
+              geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = PhyloQuantile), alpha = 0.2, colour = NA) +
+              geom_line(aes(group = as.factor(Phylo))) +
+              labs(y = "Viral sharing probability", x = "Geographic overlap", 
+                   colour = "Phylogenetic similarity", fill = "Phylogenetic similarity") +
+              lims(x = c(0,1), y = c(0,1)) +
+              coord_fixed() +
+              scale_color_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = 5:8)  +
+              scale_fill_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = 5:8)  +
+              theme(legend.position = c(0.1, 0.8), 
+                    legend.title = element_text(size = 10),
+                    legend.background = element_rect(colour = "dark grey")) +
+              geom_rug(data = DataList[[1]], inherit.aes = F, aes(x = Space), alpha = 0.01),
+            
+            FitList[[Pipeline]] %>% 
+              filter(!Phylo == last(unique(Phylo)),
+                     !Space == last(unique(Space))) %>%
+              ggplot(aes(Space, Phylo)) + 
+              geom_tile(aes(fill = Fit)) + 
+              labs(x = "Geographic overlap", 
+                   y = "Phylogenetic similarity",
+                   fill = "Viral sharing\nprobability") +
+              #ggtitle("Tensor Field") +
+              lims(x = c(0,1), y = c(0,1)) +
+              coord_fixed() +
+              theme(legend.position = "bottom",
+                    legend.title = element_text(size = 10)) +
+              geom_contour(aes(z = Fit), colour = "white", alpha = 0.8) + 
+              metR::geom_text_contour(aes(z = Fit), colour = "white", size = 2.5, hjust = 0.5, vjust = 1.1, check_overlap = T) +
+              scale_fill_continuous_sequential(palette = "ag_GrnYl",
+                                               limits = c(0,1),
+                                               breaks = c(0,0.5,1)),
+            
+            DataList[[Pipeline]] %>%
+              ggplot(aes(Space, Phylo)) + 
+              labs(x = "Geographic overlap", 
+                   y = "Phylogenetic similarity") +
+              #ggtitle("Data Distribution") +
+              scale_fill_continuous_sequential(palette = "Heat 2", breaks = c(0:2*5)) +
+              lims(x = c(0,1), y = c(0,1)) +
+              coord_fixed() +
+              theme(legend.position = "bottom") +
+              geom_hex(aes(fill = stat(log(count)))),
+            
+            nrow = 2, 
+            rel_heights = c(1,1.23), 
+            labels = "AUTO") 
   
-  AssMat[lower.tri(AssMat)] <- round(PredList1[[i]])
-  AssMat[upper.tri(AssMat)] <- t(AssMat)[!is.na(t(AssMat))]
-  diag(AssMat) <- 0
-  dimnames(AssMat) <- list(levels(DataList[[1]]$Sp),
-                           levels(DataList[[1]]$Sp))
+  dev.off()
   
-  as(AssMat, "dgCMatrix")
+  Resps <- c("VirusBinary")#,"RNA","DNA","Vector","NVector")
   
-}, mc.cores = 10)
-
-SimGraphs1 <- mclapply(1:length(PredList1), function(i){
+  # Simulating the predicted networks ####
   
-  graph.adjacency(SimNets1[[i]], mode = "undirected")
+  # Doing the simulating with random effects #####
   
-}, mc.cores = 10)
-
-# Doing the simulating without random effects #####
-
-SpCoefNames <- names(BAMList[[1]]$coef)[substr(names(BAMList[[1]]$coef),1,5)=="SppSp"]
-SpCoef <- BAMList[[1]]$coef[SpCoefNames]
-
-Predictions1b <- predict.bam(BAMList[[1]], 
-                             newdata = DataList[[1]],# %>% select(-Spp),
-                             type = "terms",
-                             exclude = "Spp")
-
-Intercept1b <- attr(Predictions1b, "constant")
-
-Predictions1b <- Predictions1b %>% as.data.frame
-
-N = nrow(FinalHostMatrix)
-
-PredList1b <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
+  PredList1 <- list()
   
-  Predictions1b[,"Spp"] <- sample(SpCoef, N, replace = T) + 
-    sample(SpCoef, N, replace = T)
+  Predictions1 <- predict.bam(BAMList[[1]], 
+                              newdata = DataList[[1]],
+                              type = "terms")
   
-  Predictions[,"Intercept"] <- Intercept1b
+  Intercept1 <- attr(Predictions1, "constant")
   
-  BinPred <- rbinom(n = N,
-                    prob = logistic(rowSums(Predictions1b)),
-                    size  = 1)
+  Predictions1 <- Predictions1 %>% as.data.frame()
   
-  BinPred
+  Predictions1$Intercept <- Intercept1
   
-}, mc.cores = 10)
-
-PredDF1b <- data.frame(PredList1b)
-FinalHostMatrix$PredVirus1b <- apply(PredDF1b, 1, mean)
-FinalHostMatrix$PredVirus1bQ <- cut(FinalHostMatrix$PredVirus1b,
-                                    breaks = c(-1:10/10),
-                                    labels = c(0:10/10))
-
-SimNets1b <- mclapply(1:length(PredList1b), function(i){
+  N = nrow(DataList[[1]])
   
-  AssMat <- matrix(NA, 
-                   nrow = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)), 
-                   ncol = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
+  PredList1 <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
+    
+    BinPred <- rbinom(n = N,
+                      prob = logistic(rowSums(Predictions1)),
+                      size  = 1)
+    
+    BinPred
+    
+  }, mc.cores = 10)
   
-  AssMat[lower.tri(AssMat)] <- round(PredList1b[[i]])
-  AssMat[upper.tri(AssMat)] <- t(AssMat)[!is.na(t(AssMat))]
-  diag(AssMat) <- 0
-  dimnames(AssMat) <- list(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2),
-                           union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2))
+  PredDF1 <- data.frame(PredList1)
   
-  as(AssMat, "dgCMatrix")
+  FinalHostMatrix$PredVirus1 <- apply(PredDF1, 1, mean)
+  FinalHostMatrix$PredVirus1Q <- cut(FinalHostMatrix$PredVirus1,
+                                     breaks = c(-1:10/10),
+                                     labels = c(0:10/10))
   
-}, mc.cores = 10)
-
-SimGraphs1b <- mclapply(1:length(PredList1b), function(i){
+  SimNets1 <- mclapply(1:length(PredList1), function(i){
+    
+    AssMat <- matrix(NA, 
+                     nrow = nlevels(DataList[[1]]$Sp), 
+                     ncol = nlevels(DataList[[1]]$Sp))
+    
+    AssMat[lower.tri(AssMat)] <- round(PredList1[[i]])
+    AssMat[upper.tri(AssMat)] <- t(AssMat)[!is.na(t(AssMat))]
+    diag(AssMat) <- 0
+    dimnames(AssMat) <- list(levels(DataList[[1]]$Sp),
+                             levels(DataList[[1]]$Sp))
+    
+    as(AssMat, "dgCMatrix")
+    
+  }, mc.cores = 10)
   
-  graph.adjacency(SimNets1b[[i]], mode = "undirected")
+  SimGraphs1 <- mclapply(1:length(PredList1), function(i){
+    
+    graph.adjacency(SimNets1[[i]], mode = "undirected")
+    
+  }, mc.cores = 10)
   
-}, mc.cores = 10)
-
-# Doing the simulating with only random effects #####
-
-SpCoefNames <- names(BAMList[[1]]$coef)[substr(names(BAMList[[1]]$coef),1,5)=="SppSp"]
-SpCoef <- BAMList[[1]]$coef[SpCoefNames]
-
-Predictions1c <- predict.bam(BAMList[[1]], 
-                             newdata = DataList[[1]] %>% 
-                               mutate_at(vars(Space, Phylo, MinCites), function(a) mean(a)) %>%
-                               mutate(Gz = 0),
-                             type = "terms")
-
-Intercept1c <- attr(Predictions1c, "constant")
-
-Predictions1c <- Predictions1c %>% as.data.frame
-
-N = nrow(FinalHostMatrix)
-
-PredList1c <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
+  # Doing the simulating without random effects #####
   
-  Predictions[,"Intercept"] <- Intercept1c
+  SpCoefNames <- names(BAMList[[1]]$coef)[substr(names(BAMList[[1]]$coef),1,5)=="SppSp"]
+  SpCoef <- BAMList[[1]]$coef[SpCoefNames]
   
-  BinPred <- rbinom(n = N,
-                    prob = logistic(rowSums(Predictions1c)),
-                    size  = 1)
+  Predictions1b <- predict.bam(BAMList[[1]], 
+                               newdata = DataList[[1]],# %>% select(-Spp),
+                               type = "terms",
+                               exclude = "Spp")
   
-  BinPred
+  Intercept1b <- attr(Predictions1b, "constant")
   
-}, mc.cores = 10)
-
-PredDF1c <- data.frame(PredList1c)
-FinalHostMatrix$PredVirus1c <- logistic(rowSums(Predictions1c)) # apply(PredDF1b, 1, mean)
-FinalHostMatrix$PredVirus1cQ <- cut(FinalHostMatrix$PredVirus1c,
-                                    breaks = c(-1:10/10),
-                                    labels = c(0:10/10))
-
-SimNets1c <- mclapply(1:length(PredList1c), function(i){
+  Predictions1b <- Predictions1b %>% as.data.frame
   
-  AssMat <- matrix(NA, 
-                   nrow = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)), 
-                   ncol = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
+  N = nrow(FinalHostMatrix)
   
-  AssMat[lower.tri(AssMat)] <- round(PredList1c[[i]])
-  AssMat[upper.tri(AssMat)] <- t(AssMat)[!is.na(t(AssMat))]
-  diag(AssMat) <- 0
-  dimnames(AssMat) <- list(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2),
-                           union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2))
+  PredList1b <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
+    
+    Predictions1b[,"Spp"] <- sample(SpCoef, N, replace = T) + 
+      sample(SpCoef, N, replace = T)
+    
+    Predictions[,"Intercept"] <- Intercept1b
+    
+    BinPred <- rbinom(n = N,
+                      prob = logistic(rowSums(Predictions1b)),
+                      size  = 1)
+    
+    BinPred
+    
+  }, mc.cores = 10)
   
-  as(AssMat, "dgCMatrix")
+  PredDF1b <- data.frame(PredList1b)
+  FinalHostMatrix$PredVirus1b <- apply(PredDF1b, 1, mean)
+  FinalHostMatrix$PredVirus1bQ <- cut(FinalHostMatrix$PredVirus1b,
+                                      breaks = c(-1:10/10),
+                                      labels = c(0:10/10))
   
-}, mc.cores = 10)
-
-SimGraphs1c <- mclapply(1:length(PredList1c), function(i){
+  SimNets1b <- mclapply(1:length(PredList1b), function(i){
+    
+    AssMat <- matrix(NA, 
+                     nrow = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)), 
+                     ncol = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
+    
+    AssMat[lower.tri(AssMat)] <- round(PredList1b[[i]])
+    AssMat[upper.tri(AssMat)] <- t(AssMat)[!is.na(t(AssMat))]
+    diag(AssMat) <- 0
+    dimnames(AssMat) <- list(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2),
+                             union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2))
+    
+    as(AssMat, "dgCMatrix")
+    
+  }, mc.cores = 10)
   
-  graph.adjacency(SimNets1c[[i]], mode = "undirected")
+  SimGraphs1b <- mclapply(1:length(PredList1b), function(i){
+    
+    graph.adjacency(SimNets1b[[i]], mode = "undirected")
+    
+  }, mc.cores = 10)
   
-}, mc.cores = 10)
-
-save(SimGraphs1, SimGraphs1b, SimGraphs1c, file = paste0("Iceberg Output Files/",Method,"/KnownSimGraphs.Rdata"))
-
-print(Sys.time())
-
-# Checking AUC
-
-AUCList <- list()
-
-for(x in c("PredVirus1", "PredVirus1b","PredVirus1c")){
+  # Doing the simulating with only random effects #####
   
-  df <- data.frame(as.vector(true[lower.tri(true)]), as.vector(pred[lower.tri(pred)]))
+  SpCoefNames <- names(BAMList[[1]]$coef)[substr(names(BAMList[[1]]$coef),1,5)=="SppSp"]
+  SpCoef <- BAMList[[1]]$coef[SpCoefNames]
   
-  df <- FinalHostMatrix[,c("VirusBinary",x)]
+  Predictions1c <- predict.bam(BAMList[[1]], 
+                               newdata = DataList[[1]] %>% 
+                                 mutate_at(vars(Space, Phylo, MinCites), function(a) mean(a)) %>%
+                                 mutate(Gz = 0),
+                               type = "terms")
   
-  colnames(df) <- c('observed','predicted')
+  Intercept1c <- attr(Predictions1c, "constant")
   
-  df$observed[df$observed>1] = 1
+  Predictions1c <- Predictions1c %>% as.data.frame
   
-  pred <- prediction(df$predicted, df$observed)
-  performance(pred,"auc")
-  plot(performance(pred, "tpr", "fpr"), main='Receiver operator curve (AUC = 0.782)')
-  abline(0,1,col='red')
+  N = nrow(FinalHostMatrix)
   
-  perf.tss <- performance(pred,"sens","spec")
-  tss.list <- (perf.tss@x.values[[1]] + perf.tss@y.values[[1]] - 1)
-  tss.df <- data.frame(alpha=perf.tss@alpha.values[[1]],tss=tss.list)
-  plot(tss.df,type='l')
+  PredList1c <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
+    
+    Predictions[,"Intercept"] <- Intercept1c
+    
+    BinPred <- rbinom(n = N,
+                      prob = logistic(rowSums(Predictions1c)),
+                      size  = 1)
+    
+    BinPred
+    
+  }, mc.cores = 10)
   
-  AUCSubList <- list(
-    Threshold = tss.df$alpha[which(tss.df$tss==max(tss.df$tss))],
-    Sensitivity = perf.tss@y.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)], 
-    Specificity = perf.tss@x.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)],
-    Type1 = 1-perf.tss@y.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)],
-    Type2 = 1-perf.tss@x.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)]
-  )
+  PredDF1c <- data.frame(PredList1c)
+  FinalHostMatrix$PredVirus1c <- logistic(rowSums(Predictions1c)) # apply(PredDF1b, 1, mean)
+  FinalHostMatrix$PredVirus1cQ <- cut(FinalHostMatrix$PredVirus1c,
+                                      breaks = c(-1:10/10),
+                                      labels = c(0:10/10))
   
-  AUCList[[x]] <- AUCSubList
+  SimNets1c <- mclapply(1:length(PredList1c), function(i){
+    
+    AssMat <- matrix(NA, 
+                     nrow = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)), 
+                     ncol = length(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
+    
+    AssMat[lower.tri(AssMat)] <- round(PredList1c[[i]])
+    AssMat[upper.tri(AssMat)] <- t(AssMat)[!is.na(t(AssMat))]
+    diag(AssMat) <- 0
+    dimnames(AssMat) <- list(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2),
+                             union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2))
+    
+    as(AssMat, "dgCMatrix")
+    
+  }, mc.cores = 10)
+  
+  SimGraphs1c <- mclapply(1:length(PredList1c), function(i){
+    
+    graph.adjacency(SimNets1c[[i]], mode = "undirected")
+    
+  }, mc.cores = 10)
+  
+  save(SimGraphs1, SimGraphs1b, SimGraphs1c, file = paste0("Iceberg Output Files/KnownSimGraphs.Rdata"))
+  
+  print(Sys.time())
+  
+  # Checking AUC
+  
+  AUCList <- list()
+  
+  for(x in c("PredVirus1", "PredVirus1b","PredVirus1c")){
+    
+    df <- data.frame(as.vector(true[lower.tri(true)]), as.vector(pred[lower.tri(pred)]))
+    
+    df <- FinalHostMatrix[,c("VirusBinary",x)]
+    
+    colnames(df) <- c('observed','predicted')
+    
+    df$observed[df$observed>1] = 1
+    
+    pred <- prediction(df$predicted, df$observed)
+    performance(pred,"auc")
+    plot(performance(pred, "tpr", "fpr"), main='Receiver operator curve (AUC = 0.782)')
+    abline(0,1,col='red')
+    
+    perf.tss <- performance(pred,"sens","spec")
+    tss.list <- (perf.tss@x.values[[1]] + perf.tss@y.values[[1]] - 1)
+    tss.df <- data.frame(alpha=perf.tss@alpha.values[[1]],tss=tss.list)
+    plot(tss.df,type='l')
+    
+    AUCSubList <- list(
+      Threshold = tss.df$alpha[which(tss.df$tss==max(tss.df$tss))],
+      Sensitivity = perf.tss@y.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)], 
+      Specificity = perf.tss@x.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)],
+      Type1 = 1-perf.tss@y.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)],
+      Type2 = 1-perf.tss@x.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)]
+    )
+    
+    AUCList[[x]] <- AUCSubList
+    
+  }
+  
+  # Deviance contributions
   
 }
 
-# Deviance contributions

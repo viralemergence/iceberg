@@ -8,10 +8,11 @@ library(tidyverse); library(raster); library(parallel)
 # Removing Marine Hosts ####
 
 Panth1 <- read.delim("data/PanTHERIA_1-0_WR05_Aug2008.txt") %>%
-  dplyr::rename(Sp = MSW05_Binomial, hOrder = MSW05_Order)
+  dplyr::rename(Sp = MSW05_Binomial, hOrder = MSW05_Order, hFamily = MSW05_Family)
 Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
-Panth1 %>% filter(hOrder%in%c("Cetacea", "Sirenia")) %>% pull(Sp) ->
+Panth1 %>% filter(hOrder%in%c("Cetacea", "Sirenia")|
+                    hFamily%in%c("Phocidae", "Odobenidae", "Otariidae")) %>% pull(Sp) ->
   MarineSp
 
 # Land use ####
@@ -89,11 +90,21 @@ Root <- paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents")
 Files <- list.files(Root)
 MaxEntSp <- Files %>% str_remove(".tif$")
 
+# Dispersals ####
+
+Dispersals <- read.csv("Iceberg Input Files/Data for dispersal_Corrected.csv", header = T)
+
+Dispersals$Scientific_name <- Dispersals$Scientific_name %>% str_replace(" ", "_")
+Dispersals <- Dispersals %>% filter(!is.na(Scientific_name), !is.na(disp50))
+
+Dispersals %>% pull(Scientific_name) -> DispersalSp
+
 # Combining them ####
 
 PhylogeneticSp %>% 
   setdiff(MarineSp) %>% 
   setdiff(NonEutherianSp) %>% 
+  intersect(DispersalSp) %>%
   intersect(MaxEntSp) -> 
   FullMaxEntSp
 
@@ -102,6 +113,7 @@ FullMaxEntSp; length(FullMaxEntSp)
 PhylogeneticSp %>% 
   setdiff(MarineSp) %>% 
   setdiff(NonEutherianSp)%>% 
+  intersect(DispersalSp) %>%
   setdiff(NullRangeBagRares) %>% 
   intersect(RangeBagSp) -> 
   FullRangeBagSp
@@ -112,41 +124,3 @@ OnlyRangeBags <- setdiff(FullRangeBagSp, FullMaxEntSp)
 
 SpeciesList <- list(MaxEnt = FullMaxEntSp, 
                     RangeBags = FullRangeBagSp)
-
-stop()
-
-# Dispersals ####
-
-Dispersals <- read.csv("Iceberg Input Files/Data for dispersal.csv", header = T)
-
-Dispersals <- Dispersals %>% filter(!is.na(Scientific_name), !is.na(disp50))
-DispersalSp <- Dispersals$Scientific_name <- Dispersals$Scientific_name %>% str_replace(" ", "_")
-
-Panth1 %>% mutate(DispersalKnown = as.numeric(Sp%in%DispersalSp)) %>% 
-  filter(Sp%in%unlist(SpeciesList)) %>% ggregplot::ggMMplot("hOrder", "DispersalKnown")
-
-lapply(NewEncountersList, function(a){
-  
-  lapply(a, function(b){
-    
-    AllSp <- c(b$Sp, b$Sp2)
-    
-    table(AllSp%in%DispersalSp)/sum(table(AllSp%in%DispersalSp))
-    
-  })
-  
-})
-
-
-lapply(NewEncountersList, function(a){
-  
-  lapply(a, function(b){
-    
-    b %>% filter(!Sp%in%DispersalSp|!Sp2%in%DispersalSp) %>% nrow %>% magrittr::divide_by(nrow(b))
-    
-  })
-  
-})
-
-
-

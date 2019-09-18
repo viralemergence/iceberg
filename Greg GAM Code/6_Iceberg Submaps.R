@@ -1,38 +1,68 @@
 
 # 6_Iceberg Submaps ####
 
+library(tidyverse); library(raster); library(parallel); library(sf); 
+library(Matrix); library(magrittr); library(SpRanger); library(cowplot);library(colorspace)
+
+load("~/Albersnet/Iceberg Output Files/NewEncounters.Rdata")
+
+PredReps <- c("Currents", paste0("Futures", 1:4))
+
+PipelineReps <- LETTERS[1:4]
+
+SpaceVars <- paste0(paste("Space", PredReps, sep = "."),rep(PipelineReps, each = length(PredReps)))
+SharingVars <- paste0(paste("Sharing",PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
+
+names(SpaceVars) <- names(SharingVars) <- paste0(PredReps,rep(PipelineReps, each = length(PredReps)))
+
 # Iceberg Ebola Hosts code ####
 
 HP3EbolaHosts <- AssocsBase %>% filter(Virus == "Zaire_ebolavirus")
 LauraEbolaHosts <- read.csv("Iceberg Input Files/ZEBOV hosts.csv")
 
-AllSums = PredNetworkList[[1]] 
+EbolaHosts <- union(HP3EbolaHosts$Host, LauraEbolaHosts$bat_species) %>% 
+  intersect(list.files("Iceberg Input Files/GretCDF/Currents") %>% str_remove(".rds$"))
 
-HP3EbolaHosts$Host %>% as.character %>% lapply(function(a){
+EbolaHosts %>% lapply(function(a){
   
-  AllMammaldf %>% filter(Sp == a|Sp2 == a) %>% pull(Sharing.Currents)
+  paste0("Iceberg Input Files/GretCDF/Currents/",a,".rds") %>% 
+    readRDS %>% as.matrix %>% as.data.frame() ->
+    Currents
   
-})
+  paste0("Iceberg Input Files/GretCDF/Futures/",a,".rds") %>% 
+    readRDS %>% as.matrix %>% as.data.frame() ->
+    Futures
+  
+  Currents %>% bind_cols(Futures[,setdiff(names(Futures), names(Currents))])
+  
+}) -> EbolaGridList
 
-PredRows <- as.matrix(AllSums)[HP3EbolaHosts$Host,]
-PredRowSums <- colSums(PredRows) %>% sort(decreasing = T)
+names(EbolaGridList) <- EbolaHosts
 
-Preddf = data.frame(
-  Sp = names(PredRowSums),
-  Prob = PredRowSums/length(HP3EbolaHosts$Host)
-) %>% mutate(Rank = 1:n(),
-             Known = as.numeric(Sp %in%HP3EbolaHosts),
-             Predicted = as.numeric(Sp%in%LauraEbolaHosts$bat_species))
+EbolaGridList %>% 
+  bind_rows(.id = "Host") %>% 
+  ggplot(aes(X,Y, fill = ClimateLandUse)) + geom_tile() + 
+  scale_fill_continuous_sequential(palette = "Terrain") +
+  facet_wrap(~Host)
 
-Preddf %>% filter(Known==0) %>% SinaGraph("Predicted", "Rank")
+saveRDS(EbolaGridList, file = "Iceberg Output Files/EbolaGridList.rds")
 
-EbolaHosts <- union(HP3EbolaHosts$Host, LauraEbolaHosts$bat_species)
+EbolaHosts %>% setdiff(c("Miniopterus_schreibersii","Pipistrellus_pipistrellus", "Hipposideros_pomona",
+                         "Cynopterus_sphinx","Acerodon_jubatus", "Rousettus_leschenaultii")) ->
+  
+  EbolaHosts
+
+# Doing the new encounters!
 
 EbolaEncounters <- lapply(NewEncountersList, function(a){
   
-  a %>% filter(Sp%in%EbolaHosts|Sp2%in%EbolaHosts, !(Sp%in%EbolaHosts&Sp2%in%EbolaHosts))
+  a %>% lapply(function(b) b %>% filter(Sp%in%EbolaHosts|Sp2%in%EbolaHosts, !(Sp%in%EbolaHosts&Sp2%in%EbolaHosts)))
   
-})
+}) %>% unlist(recursive = F)
+
+names(EbolaEncounters) <- paste0(rep(PredReps[2:5], 4), rep(PipelineReps, each = 4))
+
+saveRDS(EbolaEncounters, file = "Iceberg Output Files/EbolaEncounters.rds")
 
 names(EbolaEncounters) %>% lapply(function(a){
   
@@ -45,232 +75,227 @@ names(EbolaEncounters) %>% lapply(function(a){
   ) %>% return
 })
 
-EbolaGridList <- EbolaNEGridList <- list()
+NEEbolaSpecies <- EbolaEncounters %>% lapply(function(a){
+  
+  a %>% dplyr::select(Sp, Sp2) %>% unlist %>% unique
+  
+}) %>% reduce(union) %>% sort
 
-for(x in 1:length(IcebergAdjList)){
+EbolaFutureCDFList <- EbolaCurrentCDFList <- list()
+
+for(i in 1:length(NEEbolaSpecies)){
   
-  print(PredReps[x])
+  print(NEEbolaSpecies[i])
   
-  Files <- list.files(paste0("Iceberg Input Files/",Method,"/Final/", PredReps[x]))
+  EbolaFutureCDFList[[NEEbolaSpecies[i]]] <- 
+    readRDS(paste0("Iceberg Input Files/GretCDF/Futures/",NEEbolaSpecies[i],".rds")) %>% 
+    as.matrix %>% 
+    as.data.frame()
   
-  Files <- intersect(Files %>% str_replace(" ","_"), paste0(EbolaHosts,".tif"))
-  
-  RasterListb <- lapply(Files, function(a){
-    raster(paste(paste0("Iceberg Input Files/",Method,"/Final/", PredReps[x]), a, sep = '/'))
-  })
-  
-  names(RasterListb) <- Files %>% str_remove(".tif")
-  
-  OverlapSums <- rep(0, ncol(RasterListb[[1]])*nrow(RasterListb[[1]]))
-  
-  for(i in 1:length(RasterListb)){
-    
-    if(i %% 500 == 0) print(i)
-    SubSums <- raster::getValues(RasterListb[[i]])
-    SubSums[is.na(SubSums)] <- 0
-    OverlapSums <- OverlapSums + SubSums
-    
-  }
-  
-  OverlapSharingSums <- rep(0, ncol(RasterListb[[1]])*nrow(RasterListb[[1]]))
-  
-  for(i in 1:length(RasterListb)){
-    
-    sp = names(RasterListb)[i]
-    
-    if(sp%in%intersect(AllMammaldf$Sp,AllMammaldf$Sp2)){
-      SubSums <- raster::getValues(RasterListb[[i]])
-      SubSums[is.na(SubSums)] <- 0
-      SubSums[SubSums>0] <- (AllMammaldf %>% filter(Sp==sp|Sp2==sp))[,SharingVars[PredReps[x]]] %>% sum
-      OverlapSharingSums <- OverlapSharingSums + SubSums
-    }
-  }
-  
-  GridDF <- data.frame(
-    Richness = OverlapSums/values(AreaRaster),
-    SharingSum = OverlapSharingSums,
-    X = rep(1:ncol(RasterListb[[1]]), nrow(RasterListb[[1]])),
-    Y = rep(nrow(RasterListb[[1]]):1, each = ncol(RasterListb[[1]]))
-  ) %>%
-    mutate(SharingMean = SharingSum/Richness) %>%
-    mutate(SharingMean = ifelse(is.na(SharingMean), 0, SharingMean))
-  
-  GridDF$PredRep <- PredReps[x]
-  
-  EbolaGridList[[PredReps[x]]] <- GridDF
-  
-  if(x>1){
-    
-    print(PredReps[x])
-    
-    Files <- list.files(paste0("Iceberg Input Files/Clipped/", PredReps[x]))
-    
-    NewEncounters <- EbolaEncounters[[x-1]] %>% filter(Sp%in%(Files %>% str_remove(".tif"))&Sp2%in%(Files %>% str_remove(".tif")))
-    
-    Files <- intersect(Files %>% str_replace(" ","_"), paste0(union(NewEncounters$Sp,NewEncounters$Sp2),".tif"))
-    
-    FutureRasters <- lapply(Files, function(a){
-      raster(paste(paste0("Iceberg Input Files/Clipped/",PredReps[x]), a, sep = '/'))
-    })
-    
-    names(FutureRasters) <- Files %>% str_remove(".tif")
-    
-    RasterListb <- lapply(Files, function(a){
-      raster(paste(paste0("Iceberg Input Files/Clipped/",PredReps[x]), a, sep = '/'))
-    })
-    
-    NewIntersectsManual <- list()
-    
-    for(i in 1:nrow(NewEncounters)){
-      
-      if( i %% 1000 == 0) print(i)
-      
-      NewIntersectsManual[[paste(NewEncounters[i,c("Sp","Sp2")], collapse = ".")]] <- 
-        raster::overlay(FutureRasters[[NewEncounters[i,"Sp"]]], 
-                        FutureRasters[[NewEncounters[i,"Sp2"]]], fun = sum)
-      
-    }
-    
-    names(NewIntersectsManual) <- paste(NewEncounters[,c("Sp","Sp2")], sep = ".")
-    
-    OverlapSums <- rep(0, ncol(NewIntersectsManual[[1]])*nrow(NewIntersectsManual[[1]]))
-    
-    for(i in 1:length(NewIntersectsManual)){
-      
-      if(i %% 1000 == 0) print(i)
-      SubSums <- raster::getValues(NewIntersectsManual[[i]])
-      SubSums[is.na(SubSums)] <- 0
-      if(sum(SubSums)==0) print(i, "Panic!!!")
-      OverlapSums <- OverlapSums + SubSums
-      
-    }
-    
-    OverlapSharingSums <- rep(0, ncol(NewIntersectsManual[[1]])*nrow(NewIntersectsManual[[1]]))
-    
-    for(i in 1:length(NewIntersectsManual)){
-      
-      if( i %% 1000 == 0) print(i)
-      SubSums <- raster::getValues(NewIntersectsManual[[i]])
-      SubSums[is.na(SubSums)] <- 0
-      SubSums[SubSums>0] <- NewEncounters[i,paste0(SharingVars[x],2)]
-      OverlapSharingSums <- OverlapSharingSums + SubSums
-      
-    }
-    
-    GridDF <- data.frame(
-      OverlapSum = OverlapSums/values(AreaRaster),
-      SharingSum = OverlapSharingSums,
-      X = rep(1:ncol(NewIntersectsManual[[1]]), nrow(NewIntersectsManual[[1]])),
-      Y = rep(nrow(NewIntersectsManual[[1]]):1, each = ncol(NewIntersectsManual[[1]]))
-    ) %>%
-      mutate(SharingMean = SharingSum/OverlapSum) %>%
-      mutate(SharingMean = ifelse(is.na(SharingMean), 0, SharingMean))
-    
-    GridDF$PredRep <- PredReps[x]
-    
-    EbolaNEGridList[[PredReps[x]]] <- GridDF
-    
-    remove(NewIntersectsManual)
-    
-  }
+  EbolaCurrentCDFList[[NEEbolaSpecies[i]]] <- 
+    readRDS(paste0("Iceberg Input Files/GretCDF/Currents/",NEEbolaSpecies[i],".rds")) %>% 
+    as.matrix %>% 
+    as.data.frame()
   
 }
 
-for(i in 1:length(EbolaGridList)) EbolaGridList[[i]] <- EbolaGridList[[i]][-Sea,]
+FuturesBase <- c(A = "BufferClimateLandUse",
+                 B = "BufferClimate",
+                 C = "ClimateLandUse",
+                 D = "Climate")
 
-save(EbolaGridList, file = "Iceberg Output Files/EbolaGridList.Rdata")
+NewIntersectsManual <- EbolaFutureCDFList[[1]] %>% dplyr::select(X, Y)
 
-for(i in 1:length(EbolaNEGridList)) EbolaNEGridList[[i]] <- EbolaNEGridList[[i]][-Sea.]
-
-save(EbolaNEGridList, file = "Iceberg Output Files/EbolaNEGridList.Rdata")
-
-# Iceberg Bat-Primate ####
-
-BPEncounters <- lapply(NewEncountersList, function(a){ a %>%
-    mutate(BatPrimate = as.numeric(!hOrder.x==hOrder.y) + as.numeric(hOrder.x%in%c("Primates","Chiroptera")&
-                                                                       hOrder.y%in%c("Primates","Chiroptera"))) %>% 
-    filter(BatPrimate == 2)
+for(Pipeline in PipelineReps){
   
+  print(Pipeline)
+  
+  EbolaGridList[[Pipeline]] <- EbolaNEGridList[[Pipeline]] <- list()
+  
+  for(x in 2:length(PredReps)){
+    
+    NewEncounters <- EbolaEncounters[[paste0(PredReps[x],Pipeline)]]
+    
+    EbolaFutureCDFList %>%
+      map(paste0(FuturesBase[Pipeline], ".", PredReps[x])) %>% 
+      bind_cols %>% as.data.frame() ->
+      ValueDF
+    
+    OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
+    
+    for(y in 1:nrow(NewEncounters)){
+      
+      if(y %% 10000==0) print(y)
+      
+      Sp1 <- NewEncounters[y,"Sp"]
+      Sp2 <- NewEncounters[y,"Sp2"]
+      
+      SubSums <- as.numeric(rowSums(ValueDF[,c(Sp1,Sp2)])>1)
+      OverlapSums <- OverlapSums + SubSums
+      # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+      
+      OverlapSharingSums <- OverlapSharingSums +
+        
+        SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
+      
+      DeltaOverlapSharing <- DeltaOverlapSharing +
+        
+        SubSums*NewEncounters[y, paste0("DeltaSharing.",PredReps[x],Pipeline)]
+      
+    }
+    
+    NewIntersectsManual[,paste0("Overlap.",PredReps[x],Pipeline)] <-
+      OverlapSums
+    
+    NewIntersectsManual[,paste0("OverlapSharing.",PredReps[x],Pipeline)] <-
+      OverlapSharingSums
+    
+    NewIntersectsManual[,paste0("DeltaOverlapSharing.",PredReps[x],Pipeline)] <-
+      DeltaOverlapSharing
+    
+    saveRDS(NewIntersectsManual, file = "Iceberg Output Files/EbolaNewIntersects.rds")
+  }
+}
+
+# Iceberg Bat-Primate code ####
+
+BPHosts <- Panth1 %>% filter(hOrder %in% c("Primates", "Chiroptera")) %>% pull(Sp) %>%
+  intersect(unlist(AllMammaldf[,c("Sp","Sp2")]))
+
+BPHosts %>% lapply(function(a){
+  
+  paste0("Iceberg Input Files/GretCDF/Currents/",a,".rds") %>% 
+    readRDS %>% as.matrix %>% as.data.frame() ->
+    Currents
+  
+  paste0("Iceberg Input Files/GretCDF/Futures/",a,".rds") %>% 
+    readRDS %>% as.matrix %>% as.data.frame() ->
+    Futures
+  
+  Currents %>% bind_cols(Futures[,setdiff(names(Futures), names(Currents))])
+  
+}) -> BPGridList
+
+names(BPGridList) <- BPHosts
+
+BPGridList %>% 
+  bind_rows(.id = "Host") %>% 
+  ggplot(aes(X,Y, fill = ClimateLandUse)) + geom_tile() + 
+  scale_fill_continuous_sequential(palette = "Terrain") +
+  facet_wrap(~Host)
+
+saveRDS(BPGridList, file = "Iceberg Output Files/BPGridList.rds")
+
+BPHosts
+
+# Doing the new encounters!
+
+BPEncounters <- lapply(NewEncountersList, function(a){
+  
+  a %>% lapply(function(b){
+    
+    b %>% filter(hOrder.x %in%c("Primates", "Chiroptera"), hOrder.y %in%c("Primates", "Chiroptera"), 
+                 !hOrder.x == hOrder.y)
+    
+  })
+  
+}) %>% unlist(recursive = F)
+
+names(BPEncounters) <- paste0(rep(PredReps[2:5], 4), rep(PipelineReps, each = 4))
+
+saveRDS(BPEncounters, file = "Iceberg Output Files/BPEncounters.rds")
+
+names(BPEncounters) %>% lapply(function(a){
+  
+  list(
+    Number = length(BPEncounters[[a]][,SharingVars[a]]),
+    Mean.Sharing = mean(BPEncounters[[a]][,SharingVars[a]]),
+    Sum.Sharing = sum(BPEncounters[[a]][,SharingVars[a]]),
+    New.Sharing = sum(BPEncounters[[a]][,paste0("Delta",SharingVars[a])])
+    
+  ) %>% return
 })
 
-x = 1
+NEBPSpecies <- BPEncounters %>% lapply(function(a){
+  
+  a %>% dplyr::select(Sp, Sp2) %>% unlist %>% unique
+  
+}) %>% reduce(union) %>% sort
 
-BPNEGridList <- list()
+BPFutureCDFList <- BPCurrentCDFList <- list()
 
-for(x in 1:length(NewEncountersList)){
+for(i in 1:length(NEBPSpecies)){
   
-  print(PredReps[x+1])
+  print(NEBPSpecies[i])
   
-  Files <- list.files(paste0("Iceberg Input Files/Clipped/", PredReps[x+1]))
+  BPFutureCDFList[[NEBPSpecies[i]]] <- 
+    readRDS(paste0("Iceberg Input Files/GretCDF/Futures/",NEBPSpecies[i],".rds")) %>% 
+    as.matrix %>% 
+    as.data.frame()
   
-  NewEncounters <- BPEncounters[[x]]
-  
-  Files <- intersect(Files %>% str_replace(" ","_"), paste0(union(NewEncounters$Sp, NewEncounters$Sp2),".tif")) 
-  
-  FutureRasters <- lapply(Files, function(a){
-    raster(paste(paste0("Iceberg Input Files/Clipped/",PredReps[x+1]), a, sep = '/'))
-  })
-  
-  names(FutureRasters) <- Files %>% 
-    str_replace(" ", "_") %>% 
-    str_replace("[.]", "_") %>% str_remove(".tif$") 
-  
-  NewIntersectsManual <- list()
-  
-  for(i in 1:nrow(NewEncounters)){
-    
-    if( i %% 1000 == 0) print(i)
-    
-    NewIntersectsManual[[paste(NewEncounters[i,c("Sp","Sp2")], collapse = ".")]] <- 
-      raster::overlay(FutureRasters[[NewEncounters[i,"Sp"]]], 
-                      FutureRasters[[NewEncounters[i,"Sp2"]]], fun = sum)
-    
-  }
-  
-  names(NewIntersectsManual) <- paste(NewEncounters[,c("Sp")],NewEncounters[,c("Sp2")], sep = ".")
-  
-  OverlapSums <- rep(0, ncol(NewIntersectsManual[[1]])*nrow(NewIntersectsManual[[1]]))
-  
-  for(i in 1:length(NewIntersectsManual)){
-    
-    if(i %% 1000 == 0) print(i)
-    SubSums <- raster::getValues(NewIntersectsManual[[i]])
-    SubSums[is.na(SubSums)] <- 0
-    if(sum(SubSums)==0) print(i, "Panic!!!")
-    if(any(SubSums[ContinentWhich$N_America]>0)) print(names(NewIntersectsManual)[i])
-    OverlapSums <- OverlapSums + SubSums
-    
-  }
-  
-  OverlapSharingSums <- rep(0, ncol(NewIntersectsManual[[1]])*nrow(NewIntersectsManual[[1]]))
-  
-  for(i in 1:length(NewIntersectsManual)){
-    
-    if( i %% 1000 == 0) print(i)
-    SubSums <- raster::getValues(NewIntersectsManual[[i]])
-    SubSums[is.na(SubSums)] <- 0
-    SubSums[SubSums>0] <- NewEncounters[i,SharingVars2[x]]
-    OverlapSharingSums <- OverlapSharingSums + SubSums
-    
-  }
-  
-  GridDF <- data.frame(
-    OverlapSum = OverlapSums/values(AreaRaster),
-    SharingSum = OverlapSharingSums,
-    X = rep(1:ncol(NewIntersectsManual[[1]]), nrow(NewIntersectsManual[[1]])),
-    Y = rep(nrow(NewIntersectsManual[[1]]):1, each = ncol(NewIntersectsManual[[1]]))
-  ) %>%
-    mutate(SharingMean = SharingSum/OverlapSum) %>%
-    mutate(SharingMean = ifelse(is.na(SharingMean), 0, SharingMean))
-  
-  GridDF$PredRep <- PredReps[x+1]
-  
-  BPNEGridList[[PredReps[x+1]]] <- GridDF
-  
-  remove(NewIntersectsManual)
+  BPCurrentCDFList[[NEBPSpecies[i]]] <- 
+    readRDS(paste0("Iceberg Input Files/GretCDF/Currents/",NEBPSpecies[i],".rds")) %>% 
+    as.matrix %>% 
+    as.data.frame()
   
 }
 
-for(i in 1:length(BPNEGridList)) BPNEGridList[[i]] <- BPNEGridList[[i]][-Sea,]
+FuturesBase <- c(A = "BufferClimateLandUse",
+                 B = "BufferClimate",
+                 C = "ClimateLandUse",
+                 D = "Climate")
 
-save(BPNEGridList, file = "Iceberg Output Files/BPNEGridList.Rdata")
+NewIntersectsManual <- BPFutureCDFList[[1]] %>% dplyr::select(X, Y)
+
+BPGridList <- BPNEGridList <- list()
+
+for(Pipeline in PipelineReps){
+  
+  print(Pipeline)
+  
+  BPGridList[[Pipeline]] <- BPNEGridList[[Pipeline]] <- list()
+  
+  for(x in 2:length(PredReps)){
+    
+    NewEncounters <- BPEncounters[[paste0(PredReps[x],Pipeline)]]
+    
+    BPFutureCDFList %>%
+      map(paste0(FuturesBase[Pipeline], ".", PredReps[x])) %>% 
+      bind_cols %>% as.data.frame() ->
+      ValueDF
+    
+    OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
+    
+    for(y in 1:nrow(NewEncounters)){
+      
+      if(y %% 10000==0) print(y)
+      
+      Sp1 <- NewEncounters[y,"Sp"]
+      Sp2 <- NewEncounters[y,"Sp2"]
+      
+      SubSums <- as.numeric(rowSums(ValueDF[,c(Sp1,Sp2)])>1)
+      OverlapSums <- OverlapSums + SubSums
+      # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+      
+      OverlapSharingSums <- OverlapSharingSums +
+        
+        SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
+      
+      DeltaOverlapSharing <- DeltaOverlapSharing +
+        
+        SubSums*NewEncounters[y, paste0("DeltaSharing.",PredReps[x],Pipeline)]
+      
+    }
+    
+    NewIntersectsManual[,paste0("Overlap.",PredReps[x],Pipeline)] <-
+      OverlapSums
+    
+    NewIntersectsManual[,paste0("OverlapSharing.",PredReps[x],Pipeline)] <-
+      OverlapSharingSums
+    
+    NewIntersectsManual[,paste0("DeltaOverlapSharing.",PredReps[x],Pipeline)] <-
+      DeltaOverlapSharing
+    
+    saveRDS(NewIntersectsManual, file = "Iceberg Output Files/BPNewIntersects.rds")
+  }
+}
