@@ -238,17 +238,19 @@ pdf("Iceberg Figures/Figure1.pdf", width = 12, height = 10)
 
 par(mfrow = c(2, 1), mar = c(0,0.5,0, 5))
 
-plot(rast(NewIntersects$DeltaOverlapSharing.Futures1D, Projection = Eckert),
+plot(rast(NewIntersects$DeltaOverlapSharing.Futures1D),
      box = FALSE,
      axes = FALSE,
-     col = LightSpectral)
+     col = LightSpectral,
+     xlim = c(-12553230, 16774960), ylim = c(-8460601, 8373855))
 
 plot(contsshp, lwd = 0.5, add = TRUE)
 
 plot(rast(NewIntersects$DeltaOverlapSharing.Futures1A),
      box = FALSE,
      axes = FALSE,
-     col = LightSpectral)
+     col = LightSpectral,
+     xlim = c(-12553230, 16774960), ylim = c(-8460601, 8373855))
 
 plot(contsshp, lwd = 0.5, add = TRUE)
 
@@ -375,7 +377,7 @@ plot_grid(g1 + TextTheme,
           g2 + TextTheme,
           g3 + TextTheme,
           nrow = 3, rel_heights = c(1.15,1,1)) %>%
-  save_plot(nrow = 3, ncol = 2, filename = "Iceberg Figures/NEGams.jpeg",
+  save_plot(nrow = 3, ncol = 2, filename = "Iceberg Figures/Figure2CDEFG.jpeg",
             base_width = 4, base_height = 2.5)
 
 # Adding bat and nonbat encounters ####
@@ -425,7 +427,7 @@ plot(contsshp, lwd = 0.5, add = TRUE)
 
 dev.off()
 
-# Figure 3 ####
+# Figure 3BCD ####
 
 pdf("Iceberg Figures/Figure3BCD.pdf", width = 12, height = 10)
 
@@ -445,24 +447,25 @@ plot(africashp, add = TRUE, lwd = 0.5)
 
 dev.off()
 
-###### THIS IS A WASTELAND because the outlines can't work with this nicely and keep randomly glitching??
+# Figure 3A ####
 
 BatNew <- readRDS('./Iceberg Output Files/BPNewIntersects.rds')
 
-# Figure 4 ####
+pdf("Iceberg Figures/Figure3A.pdf", width = 12, height = 10)
 
-plot.new()
-par(fig = c(0,0.5,0.5,1))
-plot(rast(BatNew$Overlap.Futures1A), axes = FALSE, box = FALSE,
-     col = rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100])
-par(fig = c(0,0.5,0.5,1))
-plot(contsshp, lwd = 0.5, add = TRUE)
+par(mfrow = c(1,1))
 
-par(fig = c(0.5,1,0.5,1), new = TRUE)
-plot(rast(BatNew$DeltaOverlapSharing.Futures1A), axes = FALSE, box = FALSE,
-     col = rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100])
-par(fig = c(0.5,1,0.5,1), new = TRUE)
+plot(rast(BatNew$OverlapSharing.Futures1A), axes = FALSE, box = FALSE,
+     col = LightSpectral)
 plot(contsshp, lwd = 0.5,add = TRUE)
+
+dev.off()
+
+# Figure 3E ####
+
+writeRaster(rast(NewIntersects$DeltaOverlapSharing.Futures1A), file = "Iceberg Figures/Bivariate1A.tif")
+
+# Extra stuff?
 
 par(fig = c(0,0.333,0,0.5), mar = c(0,0,0,4.5), new = TRUE)
 plot(trim(sum(EboCurrents) + africa), xlim = c(-20, 55), ylim = c(-40,40), axes = FALSE, box = FALSE,
