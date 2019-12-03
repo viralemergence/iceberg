@@ -15,7 +15,7 @@
 #source("02_Iceberg ENM Futures.R")
 
 print("Spatial!")
-source("Final Iceberg Code/1_Iceberg Spatial.R")
+# source("Final Iceberg Code/1_Iceberg Spatial.R")
 
 print("Data Import!")
 source("Final Iceberg Code/2_Iceberg Data Import.R")

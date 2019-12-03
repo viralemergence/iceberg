@@ -64,14 +64,6 @@ AllMammalMatrix[,SpaceVars] <-
     
   }) %>% bind_cols
 
-for(i in 1:length(PipelineReps)){
-  
-  AllMammalMatrix[, paste0("Delta", SpaceVars[1:4 + (i-1)*4])] <-
-    
-    apply(AllMammalMatrix[, SpaceVars[1:4 + (i-1)*4]], 2, function(a) a - AllMammalMatrix[ , paste0("Space.Currents", PipelineReps[i])])
-  
-}
-
 UpperMammals <- which(upper.tri(tFullSTMatrix[AllMammals, AllMammals], diag = T))
 
 AllMammaldf <- AllMammalMatrix[-UpperMammals,]
@@ -153,15 +145,11 @@ for(Pipeline in PipelineReps){
     
     AllMammaldf2 <- AllMammaldf %>% dplyr::select(-Spp)
     
-    saveRDS(AllMammaldf2, file = "Iceberg Output Files/AllMammaldf.rds")
-    
   }
   
 }
 
 AllMammaldf <- AllMammaldf %>% dplyr::select(-Spp)
-
-save(AllMammaldf, file = paste0("Iceberg Output Files/AllMammaldf.Rdata"))
 
 for(i in 1:length(PipelineReps)){
   
@@ -206,16 +194,16 @@ NewEncountersList <-
 
 names(NewEncountersList) <- PipelineReps
 
-# Making new encounters ####
+# Making old encounters ####
 
-NewEncountersList <- 
+OldEncountersList <- 
   
   lapply(PipelineReps, function(b){
     
     l1 <- lapply(PredReps[2:5], function(a){
       
-      AllMammaldf[AllMammaldf[,paste0("Space.Currents",b)]==0&
-                    AllMammaldf[,paste0("Space.", a, b)]>0,]
+      AllMammaldf[AllMammaldf[,paste0("Space.Currents",b)]>0&
+                    AllMammaldf[,paste0("Space.", a, b)]==0,]
       
     })
     
@@ -225,11 +213,8 @@ NewEncountersList <-
     
   })
 
-names(NewEncountersList) <- PipelineReps
+names(OldEncountersList) <- PipelineReps
 
-save(AllMammaldf, file = paste0("Iceberg Output Files/AllMammaldf.Rdata"))
-save(NewEncountersList, file = paste0("Iceberg Output Files/NewEncounters.Rdata"))
-
-??pivot_wider
-
-
+saveRDS(AllMammaldf, file = "Iceberg Output Files/AllMammaldf.rds")
+saveRDS(NewEncountersList, file = paste0("Iceberg Output Files/NewEncounters.rds"))
+saveRDS(OldEncountersList, file = paste0("Iceberg Output Files/OldEncounters.rds"))

@@ -14,6 +14,8 @@ names(SpaceVars) <- names(SharingVars) <- paste0(PredReps,rep(PipelineReps, each
 
 # Overall trends ###
 
+AllMammaldf <- readRDS("~/Albersnet/Iceberg Output Files/AllMammaldf.rds")
+
 AllMammaldf %>% summarise_all(mean)
 AllMammaldf %>% summarise_at(is.numeric, sum)
 
@@ -26,19 +28,19 @@ AllMammaldf %>% summarise_at(is.numeric, sum)
 CurrentsGridDF <- readRDS("~/Albersnet/Iceberg Output Files/CurrentsGridDF.rds")
 FuturesGridDF <- readRDS("~/Albersnet/Iceberg Output Files/FuturesGridDF.rds")
 
-CurrentsGridDF %>% 
+CurrentsGridDF %>%
   bind_cols(FuturesGridDF[,setdiff(names(FuturesGridDF), names(CurrentsGridDF))]) %>%
   rename(CurrentsAC = Climate, CurrentsBD = ClimateLandUse,
          Sharing.CurrentsAC = Sharing.CurrentsA, Sharing.CurrentsBD = Sharing.CurrentsB) %>%
-  rename(Futures1D = Climate.Futures1, Futures2D = Climate.Futures2, 
+  rename(Futures1D = Climate.Futures1, Futures2D = Climate.Futures2,
          Futures3D = Climate.Futures3, Futures4D = Climate.Futures4) %>%
-  rename(Futures1C = ClimateLandUse.Futures1, Futures2C = ClimateLandUse.Futures2, 
+  rename(Futures1C = ClimateLandUse.Futures1, Futures2C = ClimateLandUse.Futures2,
          Futures3C = ClimateLandUse.Futures3, Futures4C = ClimateLandUse.Futures4) %>%
-  rename(Futures1B = BufferClimate.Futures1, Futures2B = BufferClimate.Futures2, 
+  rename(Futures1B = BufferClimate.Futures1, Futures2B = BufferClimate.Futures2,
          Futures3B = BufferClimate.Futures3, Futures4B = BufferClimate.Futures4) %>%
-  rename(Futures1A = BufferClimateLandUse.Futures1, Futures2A = BufferClimateLandUse.Futures2, 
+  rename(Futures1A = BufferClimateLandUse.Futures1, Futures2A = BufferClimateLandUse.Futures2,
          Futures3A = BufferClimateLandUse.Futures3, Futures4A = BufferClimateLandUse.Futures4) %>%
-  dplyr::select(-starts_with("LandUse"),X,Y, starts_with("Currents"), 
+  dplyr::select(-starts_with("LandUse"),X,Y, starts_with("Currents"),
                 ends_with("A"), ends_with("B"), ends_with("C"), ends_with("D")) ->
   
   GretCDF
@@ -61,11 +63,50 @@ lapply(PipelineReps, function(a){
     
   }) %>% bind_rows(.id = "PredRep")
   
-}) %>% bind_rows(.id = "Pipeline") %>% 
+}) %>% bind_rows(.id = "Pipeline") %>%
   mutate(Pipeline = PipelineReps[as.numeric(Pipeline)],
-         PredRep = PredReps[as.numeric(PredRep)+1])
+         PredRep = PredReps[as.numeric(PredRep)+1]) -> tablex
+tablex
 
+recode1 <- c(A = "Climate + Land + Dispersal",
+             B = "Climate + Land",
+             C = "Climate + Dispersal",
+             D = "Climate Only")
+recode2 <- c(Futures1 = 'RCP 2.6',
+             Futures2 = 'RCP 4.5',
+             Futures3 = 'RCP 6.0',
+             Futures4 = 'RCP 8.5')
+
+ggthemr('grass')
+
+tablex %>% as_tibble() %>% mutate(Pipeline = recode(Pipeline, !!!recode1)) %>%
+  mutate(PredRep = recode(PredRep, !!!recode2)) %>%
+  group_by(PredRep) %>% 
+  ggplot(aes(x=PredRep, y=Number, group=1)) + 
+  geom_line() + geom_point() + facet_wrap(~ Pipeline, scales='free') + xlab("Climate pathway") + 
+  ylab("Number of new encounters")
+
+
+
+####
+
+nrow(NewEncountersList$A$Futures1[NewEncountersList$A$Futures1$hOrder.x=='Chiroptera' |
+                                    NewEncountersList$A$Futures1$hOrder.y=='Chiroptera',])
+
+nrow(NewEncountersList$A$Futures1)
 #Ebola: ####
+AssocsBase <- read_csv("https://raw.githubusercontent.com/ecohealthalliance/HP3/master/data/associations.csv") %>% data.frame()
+HP3EbolaHosts <- AssocsBase %>% filter(vVirusNameCorrected == "Zaire_ebolavirus")
+LauraEbolaHosts <- read.csv("Iceberg Input Files/ZEBOV hosts.csv")
+
+EbolaHosts <- union(HP3EbolaHosts$Host, LauraEbolaHosts$bat_species) %>% 
+  intersect(list.files("Iceberg Input Files/GretCDF/Currents") %>% str_remove(".rds$"))
+
+EbolaHosts %>% setdiff(c("Miniopterus_schreibersii","Pipistrellus_pipistrellus", "Hipposideros_pomona",
+                         "Cynopterus_sphinx","Acerodon_jubatus", "Rousettus_leschenaultii")) ->
+  
+  EbolaHosts
+
 #  Current richness
 
 EbolaGridDF <- readRDS("~/Albersnet/Iceberg Output Files/EbolaGridList.rds")
@@ -96,7 +137,7 @@ AllMammaldf %>% filter(Sp%in%EbolaHosts&Sp2%in%EbolaHosts) %>% summarise_if(is.n
 EbolaEncounters # Includes only one known African Ebola host and one other mammal, and possible data, for all 16 scenarios.
 
 # For example, all hosts in new encounters
-EbolaEncounters[[1]] %>% gather("Key", "Value", hOrder.x, hOrder.y) %>% 
+EbolaEncounters[[1]] %>% gather("Key", "Value", hOrder.x, hOrder.y) %>%
   rename(hOrder = Value) %>%
   group_by(hOrder) %>% summarise(N = n()) %>% arrange(N) %>%
   as.data.frame() %>% mutate(hOrder = factor(hOrder, levels = unique(hOrder))) %>%
@@ -104,8 +145,8 @@ EbolaEncounters[[1]] %>% gather("Key", "Value", hOrder.x, hOrder.y) %>%
 
 # Or if EXCLUDING KNOWN EBOLA HOSTS
 EbolaEncounters[[1]] %>% gather("Key", "Value", Sp, Sp2) %>% filter(!Value%in%EbolaHosts) %>%
-  mutate(hOrder = ifelse(Key == "Sp", 
-                         as.character(hOrder.x), 
+  mutate(hOrder = ifelse(Key == "Sp",
+                         as.character(hOrder.x),
                          as.character(hOrder.y))) %>%
   group_by(hOrder) %>% summarise(N = n()) %>% arrange(N) %>%
   as.data.frame() %>% mutate(hOrder = factor(hOrder, levels = unique(hOrder))) %>%
@@ -113,8 +154,8 @@ EbolaEncounters[[1]] %>% gather("Key", "Value", Sp, Sp2) %>% filter(!Value%in%Eb
 
 # Then if looking at CHANGE IN SHARING of these hosts
 EbolaEncounters[[1]] %>% gather("Key", "Value", Sp, Sp2) %>% filter(!Value%in%EbolaHosts) %>%
-  mutate(hOrder = ifelse(Key == "Sp", 
-                         as.character(hOrder.x), 
+  mutate(hOrder = ifelse(Key == "Sp",
+                         as.character(hOrder.x),
                          as.character(hOrder.y))) %>%
   group_by(hOrder) %>% summarise(SharingChange = sum(DeltaSharing.Futures1A)) %>% arrange(SharingChange) %>%
   as.data.frame() %>% mutate(hOrder = factor(hOrder, levels = unique(hOrder))) %>%
@@ -122,8 +163,8 @@ EbolaEncounters[[1]] %>% gather("Key", "Value", Sp, Sp2) %>% filter(!Value%in%Eb
 
 # Then if looking at CHANGE IN SHARING of these hosts
 EbolaEncounters[[4]] %>% gather("Key", "Value", Sp, Sp2) %>% filter(!Value%in%EbolaHosts) %>%
-  mutate(hOrder = ifelse(Key == "Sp", 
-                         as.character(hOrder.x), 
+  mutate(hOrder = ifelse(Key == "Sp",
+                         as.character(hOrder.x),
                          as.character(hOrder.y))) %>%
   group_by(hOrder) %>% summarise(SharingChange = sum(DeltaSharing.Futures4A)) %>% arrange(SharingChange) %>%
   as.data.frame() %>% mutate(hOrder = factor(hOrder, levels = unique(hOrder))) %>%
@@ -144,11 +185,13 @@ colnames(EbolaNETable) <- PipelineReps
 library(raster)
 
 blank <- raster('~/Albersnet/Iceberg Input Files/UniversalBlank.tif')
+Sea = which(is.na(raster::values(blank)))
 rast <- function(x) {
   
-  r <- blank 
+  r <- blank
   
-  values(r)[-Sea] <- x 
+  values(r)[Sea] <- NA
+  values(r)[-Sea] <- x
   
   r
   
@@ -165,89 +208,381 @@ mean1D <- NewIntersects$OverlapSharing.Futures1D / NewIntersects$Overlap.Futures
 mean1D[NewIntersects$Overlap.Futures1D<500] <- NA
 plot(rast(mean1D))
 
-par(mfrow=c(2,1))
-par(mar=c(0,0,0,4))
-plot(rast(NewIntersects$Overlap.Futures1A),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(NewIntersects$Overlap.Futures1D),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(NewIntersects$Overlap.Futures4A),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(NewIntersects$Overlap.Futures4D),
-     box=FALSE,
-     axes=FALSE)
-
-
-
-plot(rast(NewIntersects$OverlapSharing.Futures1A),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(NewIntersects$OverlapSharing.Futures1D),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(NewIntersects$OverlapSharing.Futures4A),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(NewIntersects$OverlapSharing.Futures4D),
-     box=FALSE,
-     axes=FALSE)
-
-
-
-plot(rast(GretCDF$CurrentsAC),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(GretCDF$Futures1A)-rast(GretCDF$CurrentsAC),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(GretCDF$CurrentsBD),
-     box=FALSE,
-     axes=FALSE)
-plot(rast(GretCDF$Futures1D)-rast(GretCDF$CurrentsAC),
-     box=FALSE,
-     axes=FALSE)
-
 
 #### FIGURE 1 FIRST IMPRESSION
 marker = c(color = colorRampPalette(brewer.pal(11,"Spectral"))(100))
 
 par(mfrow=c(4,2))
-par(mar=c(0,0,0,4.3))
+par(mar=c(0,0.3,0,4.3)) # THIS IS MISSING THE MAP::WORLD I ADDED RESOLUTION 0 
 
 plot(rast(GretCDF$CurrentsBD),
      box=FALSE,
      axes=FALSE,
      col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100])
+plot(contsshp, lwd=0.5, add=TRUE)
 plot(rast(GretCDF$CurrentsAC),
      box=FALSE,
      axes=FALSE,
      col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100])
-plot(rast(GretCDF$Futures1D)-rast(GretCDF$CurrentsAC),
+plot(contsshp, lwd=0.5, add=TRUE)
+plot(rast(GretCDF$Futures1D)-rast(GretCDF$CurrentsBD),
      box=FALSE,
      axes=FALSE,
-     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100)), 
+     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100)),
      zlim=c(-275, 275))
+plot(contsshp, lwd=0.5, add=TRUE)
 plot(rast(GretCDF$Futures1A)-rast(GretCDF$CurrentsAC),
      box=FALSE,
      axes=FALSE,
-     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100)), 
+     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100)),
      zlim=c(-160, 160))
+plot(contsshp, lwd=0.5, add=TRUE)
 plot(rast(NewIntersects$Overlap.Futures1D),
      box=FALSE,
      axes=FALSE,
      col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
+plot(contsshp, lwd=0.5, add=TRUE)
+plot(contsshp, lwd=0.5, add=TRUE)
 plot(rast(NewIntersects$Overlap.Futures1A),
      box=FALSE,
      axes=FALSE,
      col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
-plot(rast(NewIntersects$OverlapSharing.Futures1D),
+plot(contsshp, lwd=0.5, add=TRUE)
+plot(rast(NewIntersects$DeltaOverlapSharing.Futures1D),
      box=FALSE,
      axes=FALSE,
      col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
-plot(rast(NewIntersects$OverlapSharing.Futures1A),
+plot(rast(NewIntersects$DeltaOverlapSharing.Futures1A),
      box=FALSE,
      axes=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
+
+
+###################################
+
+# Colin's Ebola maps
+
+EbolaGridList <- readRDS('./Iceberg Output Files/EbolaGridList.rds')
+
+EboCurrents <- stack(lapply(EbolaGridList, function(x) {rast(x$ClimateLandUse)}))
+plot(sum(EboCurrents))
+
+conts <- raster('./Iceberg Input Files/continents-madagascar.tif')
+africa <- conts; africa[!(africa==1)] <- NA; africa <- africa-1
+
+EboFutures <- stack(lapply(EbolaGridList, function(x) {rast(x$BufferClimateLandUse.Futures1)}))
+plot(sum(EboFutures))
+
+
+EbolaNew <- readRDS('./Iceberg Output Files/EbolaNewIntersects.rds')
+
+africashp <- rasterToPolygons(africa, dissolve = TRUE)
+contsshp <- rasterToPolygons(conts, dissolve = TRUE)
+
+par(mfrow=c(1,3), mar=c(0,1,0,4.5))
+
+plot(trim(sum(EboCurrents) + africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[15:100]) # PANEL C
+plot(africashp, add=TRUE, lwd=0.5)
+
+plot(trim(sum(EboFutures)-sum(EboCurrents) + africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100))) # PANEL C
+plot(africashp, add=TRUE, lwd=0.5)
+
+plot(trim(rast(EbolaNew$Overlap.Futures1A)+africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
+plot(africashp, add=TRUE, lwd=0.5)
+
+BatNew <- readRDS('./Iceberg Output Files/BPNewIntersects.rds')
+
+###### THIS IS A WASTELAND because the outlines can't work with this nicely and keep randomly glitching??
+
+plot.new()
+#layout(matrix(c(1,1,1,2,2,2,3,3,4,4,5,5), nrow = 2, ncol = 3, byrow = FALSE))
+par(fig=c(0,0.5,0.5,1))
+#plot(contsshp, lwd=0.5)
+plot(rast(BatNew$Overlap.Futures1A), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100])
+par(fig=c(0,0.5,0.5,1))
+plot(contsshp, lwd=0.5, add=TRUE)
+
+par(fig=c(0.5,1,0.5,1), new=TRUE)
+plot(rast(BatNew$DeltaOverlapSharing.Futures1A), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100])
+par(fig=c(0.5,1,0.5,1), new=TRUE)
+plot(contsshp, lwd=0.5,add=TRUE)
+
+par(fig=c(0,0.333,0,0.5), mar=c(0,0,0,4.5), new=TRUE)
+plot(trim(sum(EboCurrents) + africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[15:100]) # PANEL C
+par(fig=c(0,0.333,0,0.5), new=TRUE)
+plot(africashp, add=TRUE, lwd=0.5)
+
+par(fig=c(0.333,0.666,0,0.5), mar=c(0,0,0,4.5), new=TRUE)
+plot(trim(sum(EboFutures)-sum(EboCurrents) + africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100))) # PANEL C
+par(fig=c(0.333,0.666,0,0.5), new=TRUE)
+plot(africashp, add=TRUE, lwd=0.5)
+
+par(fig=c(0.666,1,0,0.5), mar=c(0,0,0,4.5), new=TRUE)
+plot(trim(rast(EbolaNew$Overlap.Futures1A)+africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
+par(fig=c(0.666,1,0,0.5), new=TRUE)
+plot(africashp, add=TRUE, lwd=0.5)
+
+#### Sub-components
+
+
+plot.new()
+
+par(mfrow=c(1,2), mar=c(0,1,0,4))
+plot(rast(BatNew$Overlap.Futures1A), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100],
+     legend.shrink=0.25)
+plot(contsshp, lwd=0.5, add=TRUE)
+
+plot(rast(BatNew$DeltaOverlapSharing.Futures1A), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[10:100],
+     legend.shrink=0.25)
+plot(contsshp, lwd=0.5,add=TRUE)
+
+plot.new()
+
+par(mfrow=c(1,3), mar=c(0,0.5,0,5.5))
+
+plot(trim(sum(EboCurrents) + africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[15:100],
+     axis.args=list( cex.axis=1.5), legend.shrink=0.25) # PANEL C
+plot(africashp, add=TRUE, lwd=0.5)
+
+plot(trim(sum(EboFutures)-sum(EboCurrents) + africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"RdBu"))(100)),
+     axis.args=list( cex.axis=1.5), legend.shrink=0.25) # PANEL C
+plot(africashp, add=TRUE, lwd=0.5)
+
+plot(trim(rast(EbolaNew$Overlap.Futures1A)+africa), xlim=c(-20, 55), ylim=c(-40,40), axes=FALSE, box=FALSE,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)),
+     axis.args=list( cex.axis=1.5), legend.shrink=0.25)
+plot(africashp, add=TRUE, lwd=0.5)
+
+
+
+############################
+
+# 4x4 grid outputs ####
+
+PipelineReps %>% sapply(function(a){
+  
+  sapply(PredReps[2:5], function(b){
+    
+    AllMammaldf[,paste0("DeltaSharing.",b,a)] %>% mean
+    
+  })
+  
+}) %>% reshape2::melt() %>%
+  ggplot(aes(Var1, Var2, fill = value)) + geom_tile() + geom_text(aes(label = round(value, 4))) +
+  labs(x = "RCP", y = "Pipeline") + lims(fill = c(0, NA)) +
+  scale_fill_continuous_sequential(palette = AlberPalettes[[1]]) +
+  coord_fixed() + ggtitle("Delta Sharing")
+
+
+PipelineReps %>% sapply(function(a){
+  
+  sapply(PredReps[2:5], function(b){
+    
+    NewEncountersList[[a]][[b]] %>% nrow
+    
+  })
+  
+}) %>% reshape2::melt() %>%
+  ggplot(aes(Var1, Var2, fill = value)) + geom_tile() + geom_text(aes(label = round(value, 3))) +
+  labs(x = "RCP", y = "Pipeline") + coord_fixed() + ggtitle("New Encounters")
+
+# Model output coefficients for BAMs ####
+
+unlist(NEPredictModels, recursive = F) %>% unlist(recursive = F) %>%
+  lapply(function(a){
+    
+    a <- summary(a)
+    N <- a$p.coeff %>% length
+    
+    data.frame(Mean = a$p.coeff, 
+               SE = a$se[1:N],
+               Var = names(a$p.coeff) %>% as.character() %>% str_remove("HabitatType")) %>%
+      rbind(data.frame(Mean = 0, SE = 0, Var = "Cropland"), .) %>%
+      filter(!Var == "(Intercept)")
+    
+  }) %>% bind_rows(.id = "Model") -> BAMFixed
+
+ggplot(BAMFixed, aes(Var, Mean, colour = Model)) + 
+  geom_hline(yintercept = 0, alpha = 0.3, lty = 2) +
+  geom_point(position = position_dodge(w = 0.5)) + 
+  geom_errorbar(aes(ymin = Mean - SE, 
+                    ymax = Mean + SE), 
+                position = position_dodge(w = 0.5), 
+                width = 0.2) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  coord_flip()
+
+# Smooths for GAMs ####
+
+
+lapply(Resps, function(a){
+  
+  FitList %>% unlist(recursive = F) %>%  map(a) %>% bind_rows(.id = "Pipeline") %>%
+    filter(HabitatType == "Cropland", Richness %in% Richnesses)  %>%
+    ggplot(aes(Elevation, Fit, fill = Pipeline, colour = Pipeline)) + 
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + geom_line() +
+    ggtitle(a) + scale_fill_discrete_sequential(palette = AlberPalettes[[1]]) + 
+    labs(y = "Predicted Encounters") + theme(legend.position = c(0.5,0.8)) +
+    scale_colour_discrete_sequential(palette = AlberPalettes[[1]]) + scale_y_log10()
+  
+}) %>% append(
+  
+  lapply(Resps, function(a){
+    
+    FitList %>% unlist(recursive = F) %>%  map(a) %>% bind_rows(.id = "Pipeline") %>%
+      filter(HabitatType == "Cropland", Elevation == last(unique(Elevation)))  %>%
+      ggplot(aes(Richness, Fit, fill = Pipeline, colour = Pipeline)) + 
+      geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + geom_line() +
+      ggtitle(a) + labs(y = "Predicted Encounters") + theme(legend.position = c(0.2,0.8)) + 
+      scale_fill_discrete_sequential(palette = AlberPalettes[[2]]) + 
+      scale_colour_discrete_sequential(palette = AlberPalettes[[2]]) + scale_y_log10()
+    
+  })) %>% plot_grid(plotlist = ., ncol = 2)
+
+
+
+
+#### Colin's mangled hell version of this
+
+{ # All Run
+  
+  FitList %>% unlist(recursive = F) %>%  map("NoBat") %>% bind_rows(.id = "Pipeline") %>%
+    filter(HabitatType == "Cropland", Richness %in% Richnesses) %>% mutate(Bats = 'Non-bats') -> df1
+  
+  FitList %>% unlist(recursive = F) %>%  map("SomeBat") %>% bind_rows(.id = "Pipeline") %>%
+    filter(HabitatType == "Cropland", Richness %in% Richnesses)  %>% mutate(Bats = "Bat encounters") -> df2
+  
+  named <- c(A.Futures1 = 'RCP 2.6 (CLD)',
+             A.Futures4 = 'RCP 8.5 (CLD)',
+             D.Futures1 = 'RCP 2.6 (C)',
+             D.Futures4 = 'RCP 8.5 (C)') 
+  rbind(df1, df2) %>% mutate(Scenario = recode(Pipeline, !!!named)) %>% 
+    ggplot(aes(Elevation, Fit, fill = Scenario, colour = Scenario)) + facet_wrap( ~ Bats) + 
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + geom_line() +
+    scale_fill_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = c(3,5,7,8)) + 
+    labs(y = "Predicted Encounters",
+         x = "Elevation",
+         fill = 'Scenario', colour = 'Scenario')+
+    theme_cowplot()  + 
+    scale_colour_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = c(3,5,7,8)) + scale_y_log10(labels = scales::scientific)  + 
+    theme(strip.background = element_blank()) + xlim(0,6100) -> g1; g1
+  
+  FitList %>% unlist(recursive = F) %>%  map('NoBat') %>% bind_rows(.id = "Pipeline") %>%
+    filter(HabitatType == "Cropland", Elevation == last(unique(Elevation))) %>% mutate(Bats = 'Non-bats')  -> df3
+  
+  FitList %>% unlist(recursive = F) %>%  map('SomeBat') %>% bind_rows(.id = "Pipeline") %>%
+    filter(HabitatType == "Cropland", Elevation == last(unique(Elevation))) %>% mutate(Bats = "Bat encounters") -> df4
+  
+  named <- c(A.Futures1 = 'RCP 2.6 (CLD)',
+             A.Futures4 = 'RCP 8.5 (CLD)',
+             D.Futures1 = 'RCP 2.6 (C)',
+             D.Futures4 = 'RCP 8.5 (C)') 
+  rbind(df3, df4) %>% mutate(Scenario = recode(Pipeline, !!!named)) %>% 
+    ggplot(aes(Richness, Fit, fill = Scenario, colour = Scenario)) + facet_wrap(~ Bats) +
+    geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + geom_line() +
+    labs(y = "Predicted Encounters",
+         x = "Richness",
+         fill = 'Scenario', colour = 'Scenario')+
+    theme_cowplot()  +  
+    scale_fill_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = c(3,5,7,8)) + 
+    scale_colour_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = c(3,5,7,8))+ scale_y_log10(labels = scales::scientific) + 
+    theme(strip.background = element_blank(),
+          strip.text.x = element_blank()) -> g2; g2
+  
+  plot_grid(g1, g2, nrow=2)
+  
+  #### BAM panels
+  
+  named <- c(A.Futures1.NoBat = 'RCP 2.6 (CLD)',
+             A.Futures4.NoBat = 'RCP 8.5 (CLD)',
+             D.Futures1.NoBat = 'RCP 2.6 (C)',
+             D.Futures4.NoBat = 'RCP 8.5 (C)',
+             A.Futures1.SomeBat = 'RCP 2.6 (CLD)',
+             A.Futures4.SomeBat = 'RCP 8.5 (CLD)',
+             D.Futures1.SomeBat = 'RCP 2.6 (C)',
+             D.Futures4.SomeBat = 'RCP 8.5 (C)') 
+  
+  reclass <- c(Rangeland = 'Range',
+               Nonforest = 'Other',
+               Cropland = 'Crop', 
+               Urban = 'Settled') 
+  
+  BAMFixed %>% mutate(Bats = grepl("SomeBat",Model)) %>% 
+    mutate(Bats = if_else(Bats == TRUE,'Bat encounters','Non-bat')) %>%
+    mutate(Scenario = recode(Model, !!!named)) %>% 
+    mutate(Var = recode(Var, !!!reclass)) %>%
+    ggplot(aes(Var, Mean, colour = Scenario)) + theme_classic() + 
+    facet_wrap(. ~ Bats) + 
+    geom_hline(yintercept = 0, alpha = 0.7, lty = 2) +
+    geom_point(position = position_dodge(w = 0.5)) + 
+    geom_errorbar(aes(ymin = Mean - SE, 
+                      ymax = Mean + SE), 
+                  position = position_dodge(w = 0.5), 
+                  width = 0.2) +
+    theme_cowplot() +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+          axis.text.y = element_text(margin = margin(r = 5)),
+          axis.title.y = element_text(margin = margin(r = 6, l = 8)),
+          plot.margin = margin(0.5, 0.1, 0.5, 0, 'cm'),
+          strip.background = element_blank(),
+          strip.text.x = element_blank(),
+          panel.border = element_rect(colour = "black",
+                                      fill = NA)) + 
+    labs(y = "Effect size", x = "Land Use") + 
+    scale_color_discrete_sequential(palette = AlberPalettes[[3]], nmax = 10, order = c(5,7,8,10)) +
+    lims(x = rev(c("Crop", "Settled", "Range", "Forest", "Other"))) + 
+    coord_flip()  -> g3; g3
+  
+  TextSize = 14
+  
+  TextTheme <- theme(axis.title.x = element_text(size = TextSize),
+                     axis.title.y = element_text(size = TextSize),
+                     axis.text.y = element_text(angle = 0, hjust = 1))
+  
+  plot_grid(g1 + TextTheme,
+            g2 + TextTheme,
+            g3 + TextTheme,
+            nrow = 3, rel_heights = c(1.15,1,1)) %>%
+    save_plot(nrow = 3, ncol = 2, filename = "NEGams.jpeg",
+              base_width = 4, base_height = 2.5)
+  
+  }
+
+
+
+############ hell time
+
+names <- list.files('./Iceberg Output Files', pattern='NoBatNew')
+
+blankstack <- raster::stack()
+for (i in names) {
+  order.rds <- readRDS(paste('./Iceberg Output Files/',i,sep=''))
+  blankstack <- raster::stack(blankstack, rast(order.rds$Overlap.Futures1A))
+}
+names(blankstack) <- gsub('NoBatNewIntersects.rds','',names)
+
+par(mar=c(0,0,0,0), oma=c(0,0,0,0))
+plot(blankstack, axes=FALSE, box=FALSE,legend.shrink=0.25,
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))[15:100])
+
+nonbat <- sum(blankstack)
+par(mar=c(0,0.5,0,8))
+plot(nonbat, axes=FALSE, box=FALSE, legend.shrink=0.8, 
+     legend.width=2, axis.args=list(cex.axis=1.2),
+     col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))
+plot(rast(NewIntersects$Overlap.Futures1A)-nonbat, axes=FALSE, box=FALSE,
+     legend.shrink=0.8, 
+     legend.width=2, axis.args=list(cex.axis=1.2),
      col=rev(colorRampPalette(brewer.pal(11,"Spectral"))(100)))

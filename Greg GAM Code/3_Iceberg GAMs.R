@@ -167,7 +167,7 @@ if(Output){
   
   plot_grid(FitList[[Pipeline]] %>% 
               filter(!is.na(SpaceQuantile)) %>%
-              ggplot(aes(Phylo, Fit, colour = SpaceQuantile)) + 
+              ggplot(aes(Phylo, Fit, colour = SpaceQuantile)) + theme_cowplot() + 
               geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = SpaceQuantile), alpha = 0.2, colour = NA) +
               geom_line(aes(group = as.factor(Space))) +
               labs(y = "Viral sharing probability", x = "Phylogenetic similarity", 
@@ -183,7 +183,7 @@ if(Output){
             
             FitList[[Pipeline]] %>% 
               filter(!is.na(PhyloQuantile)) %>%
-              ggplot(aes(Space, Fit, colour = PhyloQuantile)) + 
+              ggplot(aes(Space, Fit, colour = PhyloQuantile)) +  theme_cowplot() + 
               geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = PhyloQuantile), alpha = 0.2, colour = NA) +
               geom_line(aes(group = as.factor(Phylo))) +
               labs(y = "Viral sharing probability", x = "Geographic overlap", 
@@ -200,7 +200,7 @@ if(Output){
             FitList[[Pipeline]] %>% 
               filter(!Phylo == last(unique(Phylo)),
                      !Space == last(unique(Space))) %>%
-              ggplot(aes(Space, Phylo)) + 
+              ggplot(aes(Space, Phylo)) +  theme_cowplot() + 
               geom_tile(aes(fill = Fit)) + 
               labs(x = "Geographic overlap", 
                    y = "Phylogenetic similarity",
@@ -217,7 +217,7 @@ if(Output){
                                                breaks = c(0,0.5,1)),
             
             DataList[[Pipeline]] %>%
-              ggplot(aes(Space, Phylo)) + 
+              ggplot(aes(Space, Phylo)) +  theme_cowplot() + 
               labs(x = "Geographic overlap", 
                    y = "Phylogenetic similarity") +
               #ggtitle("Data Distribution") +

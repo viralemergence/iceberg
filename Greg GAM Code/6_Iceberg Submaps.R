@@ -4,7 +4,9 @@
 library(tidyverse); library(raster); library(parallel); library(sf); 
 library(Matrix); library(magrittr); library(SpRanger); library(cowplot);library(colorspace)
 
-load("~/Albersnet/Iceberg Output Files/NewEncounters.Rdata")
+NewIntersects <- readRDS("~/Albersnet/Iceberg Output Files/NewIntersects.rds")
+
+NewEncountersList <- readRDS("~/Albersnet/Iceberg Output Files/NewEncounters.rds")
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
 
@@ -14,6 +16,16 @@ SpaceVars <- paste0(paste("Space", PredReps, sep = "."),rep(PipelineReps, each =
 SharingVars <- paste0(paste("Sharing",PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
 
 names(SpaceVars) <- names(SharingVars) <- paste0(PredReps,rep(PipelineReps, each = length(PredReps)))
+
+# Blanks
+blank <- matrix(0,360*2,720*2) # proper resolution
+blank <- raster(blank)
+extent(blank) <- c(-180,180,-90,90)
+projection(blank) <- CRS("+proj=longlat +datum=WGS84")
+
+UniversalBlank <- raster("Iceberg Input Files/UniversalBlank.tif")
+Land = which(raster::values(UniversalBlank)==0)
+Sea = which(is.na(raster::values(UniversalBlank)))
 
 # Iceberg Ebola Hosts code ####
 
@@ -52,7 +64,32 @@ EbolaHosts %>% setdiff(c("Miniopterus_schreibersii","Pipistrellus_pipistrellus",
   
   EbolaHosts
 
+# Continents ####
+print("Continents!")
+
+ContinentRaster <- raster("Iceberg Input Files/continents-madagascar.tif") %>%
+  resample(blank, method = "ngb")
+
+ContinentWhich <- lapply(1:max(values(ContinentRaster), na.rm = T), function(a) which(values(ContinentRaster)[-Sea]==a))
+names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "Madagascar", "NAm", "Oceania", "SAm")
+
 # Doing the new encounters!
+
+AfricaEbolaEncounters <- readRDS("~/Albersnet/Iceberg Output Files/AfricaEbolaEncounters.rds")
+
+1:length(AfricaEbolaEncounters) %>% lapply(function(a){
+  
+  1:4 %>% lapply(function(b){
+    
+    NewEncountersList[[a]][[b]] %>% 
+      filter((Sp%in%AfricaEbolaEncounters[[a]][[b]]|Sp2%in%AfricaEbolaEncounters[[a]][[b]]),
+             (Sp%in%EbolaHosts|Sp2%in%EbolaHosts),
+             !(Sp%in%EbolaHosts&Sp2%in%EbolaHosts),
+             !(Sp%in%setdiff(AfricaEbolaEncounters[[a]][[b]], EbolaHosts)&Sp2%in%setdiff(AfricaEbolaEncounters[[a]][[b]], EbolaHosts)))
+    
+  })
+  
+}) -> EbolaEncounters
 
 EbolaEncounters <- lapply(NewEncountersList, function(a){
   
@@ -106,13 +143,17 @@ FuturesBase <- c(A = "BufferClimateLandUse",
 
 NewIntersectsManual <- EbolaFutureCDFList[[1]] %>% dplyr::select(X, Y)
 
+EbolaNEGridList <- EbolaGridList <- AfricaEbolaHosts <- list()
+
 for(Pipeline in PipelineReps){
   
   print(Pipeline)
   
-  EbolaGridList[[Pipeline]] <- EbolaNEGridList[[Pipeline]] <- list()
+  EbolaGridList[[Pipeline]] <- EbolaNEGridList[[Pipeline]] <- AfricaEbolaHosts[[Pipeline]] <- list()
   
   for(x in 2:length(PredReps)){
+    
+    print(PredReps[x])
     
     NewEncounters <- EbolaEncounters[[paste0(PredReps[x],Pipeline)]]
     
@@ -120,6 +161,12 @@ for(Pipeline in PipelineReps){
       map(paste0(FuturesBase[Pipeline], ".", PredReps[x])) %>% 
       bind_cols %>% as.data.frame() ->
       ValueDF
+    
+    ValueDF[-ContinentWhich$Africa,] <- 0
+    
+    which(colSums(ValueDF) == 0) %>% names %>% setdiff(NEEbolaSpecies, .) ->
+      
+      AfricaEbolaHosts[[Pipeline]][[PredReps[x]]]
     
     OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
     
@@ -157,36 +204,12 @@ for(Pipeline in PipelineReps){
   }
 }
 
+saveRDS(AfricaEbolaHosts, file = "Iceberg Output Files/AfricaEbolaEncounters.rds")
+
 # Iceberg Bat-Primate code ####
 
 BPHosts <- Panth1 %>% filter(hOrder %in% c("Primates", "Chiroptera")) %>% pull(Sp) %>%
   intersect(unlist(AllMammaldf[,c("Sp","Sp2")]))
-
-BPHosts %>% lapply(function(a){
-  
-  paste0("Iceberg Input Files/GretCDF/Currents/",a,".rds") %>% 
-    readRDS %>% as.matrix %>% as.data.frame() ->
-    Currents
-  
-  paste0("Iceberg Input Files/GretCDF/Futures/",a,".rds") %>% 
-    readRDS %>% as.matrix %>% as.data.frame() ->
-    Futures
-  
-  Currents %>% bind_cols(Futures[,setdiff(names(Futures), names(Currents))])
-  
-}) -> BPGridList
-
-names(BPGridList) <- BPHosts
-
-BPGridList %>% 
-  bind_rows(.id = "Host") %>% 
-  ggplot(aes(X,Y, fill = ClimateLandUse)) + geom_tile() + 
-  scale_fill_continuous_sequential(palette = "Terrain") +
-  facet_wrap(~Host)
-
-saveRDS(BPGridList, file = "Iceberg Output Files/BPGridList.rds")
-
-BPHosts
 
 # Doing the new encounters!
 
