@@ -1,0 +1,215 @@
+Species,Genus,Family,Envelope,Genome,ICTV history URL,Discovery year,Reference (discovery),Serological detection only,Vector,Inhalation,Ingestion,Sexual,Iatrogenic (inc. blood),Fomites,Broken Skin,Maternal,Direct Contact,Reference (Transmission route),Ref2 (TR),Transmission level,Person-to-person,Host range,Human only,Non-human primate,Other mammals,Birds,Reptiles,Fish,Reference (Host range),Ref2 (HR)
+Chapare mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161875,2008,18421377,N,0,1,0,0,0,0,0,0,0,12615305,,2,0,broad,0,0,1,0,0,0,18421377,
+Guanarito mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161879,1991,1681354,N,0,1,0,0,0,0,0,0,0,8166352,12615305,3,1,broad,0,0,1,0,0,0,10463688,
+Junín mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161881,1958,13586110,N,0,1,0,0,0,0,0,0,0,24901990,12615305,3,1,broad,0,0,1,0,0,0,23202466,24901990
+Lassa mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161882,1970,4987547,N,0,1,0,0,0,0,0,1,0,26276630,15487592,3,1,broad,0,0,1,0,0,0,17326956,15487592
+Lujo mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161884,2009,19478873,N,0,1,0,0,0,1,0,0,1,25393244,,3,1,broad,0,0,1,0,0,0,22953019,
+Lymphocytic choriomeningitis mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161887,1934,Available from external site,N,0,1,0,0,0,0,0,1,0,26631809,23666045,3,1,broad,0,1,1,0,0,0,23666045,
+Machupo mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161888,1964,14196061,N,0,1,0,0,0,0,0,0,0,25031335,,3,1,broad,0,0,1,0,0,0,182399,
+Mobala mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161891,1985,2986324,Y,0,1*,0,0,0,0,0,0,0,26982388,,2,0,broad,0,0,1,0,0,0,26982388,
+Pichindé mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161896,1974,4856825,Y,0,1*,0,0,0,0,0,0,0,23552411,,2,0,broad,0,0,1,0,0,0,23552411,
+Sabiá mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161898,1994,7905555,N,0,1,0,0,0,0,0,0,0,7905555,,3,1,broad,0,0,1,0,0,0,7905555,
+Whitewater Arroyo mammarenavirus,Mammarenavirus,Arenaviridae,1,(-)ssRNA,20161902,2000,10960307,N,0,1,0,0,0,0,0,0,0,11508391,,2,0,broad,0,0,1,0,0,0,11508391,
+Mamastrovirus 1,Mamastrovirus,Astroviridae,0,(+)ssRNA,20161926,1975,48925,N,0,0,1,0,0,0,0,0,0,16546454,,4b,1,narrow,1,0,0,0,0,0,16546454,
+Mamastrovirus 6,Mamastrovirus,Astroviridae,0,(+)ssRNA,20161931,2008,18398449,N,0,0,1,0,0,0,0,0,0,26212039,24789796,4b,1,narrow,1,0,0,0,0,0,26212039,
+Mamastrovirus 8,Mamastrovirus,Astroviridae,0,(+)ssRNA,20161933,2009,19814825,N,0,0,1,0,0,0,0,0,0,25975198,,4b,1,narrow,1,0,0,0,0,0,25975198,
+Mamastrovirus 9,Mamastrovirus,Astroviridae,0,(+)ssRNA,20161934,2009,19706703,N,0,0,1,0,0,0,0,0,0,19706703,,4b,1,narrow,1,0,0,0,0,0,19706703,
+Mammalian 1 bornavirus,Bornavirus,Bornaviridae,1,(-)ssRNA,20160985,1985,3922055,N,0,0,0,0,0,0,0,0,1,23223618,,2,0,broad,0,1,1,0,0,0,23223618,
+Mammalian 2 bornavirus ,Bornavirus,Bornaviridae,1,(-)ssRNA,20165112,2015,26154788,N,0,0,0,0,0,0,1,0,1*,26154788,,2,0,broad,0,0,1,0,0,0,26154788,
+Norwalk virus ,Norovirus,Caliciviridae,0,(+)ssRNA,20162202,1972,4117963,N,0,0,1,0,0,0,0,0,1,19796107,22317811,4a,1,broad,0,0,1,0,0,0,22389721,
+Sapporo virus,Sapovirus,Caliciviridae,0,(+)ssRNA,20162204,1980,7410899,N,0,0,1,0,0,0,0,0,0,27120472,,4a,1,broad,0,0,1,0,0,0,21645054,
+Vesicular exanthema of swine virus,Vesivirus,Caliciviridae,0,(+)ssRNA,20162207,1998,9502467,N,0,1*,1*,0,0,0,0,0,1*,6283714,,2,0,broad,0,0,1,0,1,1,19913368,
+Alphacoronavirus 1,Alphacoronavirus,Coronaviridae,1,(+)ssRNA,20161200,2007,17447647,Y,0,0,1*,0,0,0,0,0,0,22320357,,2,0,broad,0,0,1,0,0,0,22320357,28549438
+Human coronavirus 229E ,Alphacoronavirus,Coronaviridae,1,(+)ssRNA,20161203,1966,4285768,N,0,1,0,0,0,1,0,0,0,26556276,,4b,1,narrow,1,0,0,0,0,0,12551991,
+Human coronavirus NL63,Alphacoronavirus,Coronaviridae,1,(+)ssRNA,20161204,2004,15073334,N,0,1,0,0,0,1,0,0,0,21366416,,4b,1,narrow,1,0,0,0,0,0,21366416,
+Betacoronavirus 1,Betacoronavirus,Coronaviridae,1,(+)ssRNA,20161212,1967,5231356,N,0,1,0,0,0,1,0,0,0,28549438,,4a,1,broad,0,0,1,0,0,0,22362949,28549438
+Human coronavirus HKU1,Betacoronavirus,Coronaviridae,1,(+)ssRNA,20161214,2005,15613317,N,0,1,0,0,0,1,0,0,0,23161446,,4b,1,narrow,1,0,0,0,0,0,23161446,
+Middle East respiratory syndrome-related coronavirus,Betacoronavirus,Coronaviridae,1,(+)ssRNA,20161215,2012,23075143,N,0,1,0,0,0,0,0,0,1,28653496,,3,1,broad,0,0,1,0,0,0,28653496,
+Severe acute respiratory syndrome-related coronavirus,Betacoronavirus,Coronaviridae,1,(+)ssRNA,20161219,2003,12711465,N,0,1,0,0,0,0,0,0,0,15018126,,4a,1,broad,0,0,1,0,0,0,12939793,
+Human torovirus,Torovirus,Coronaviridae,1,(+)ssRNA,20161240,1984,6143978,N,0,0,1,0,0,0,0,0,0,9426455,,4b,1,narrow,1,0,0,0,0,0,9426455,
+Bundibugyo ebolavirus,Ebolavirus,Filoviridae,1,(-)ssRNA,20160996,2008,19023410,N,0,0,0,0,0,0,1,0,1,27489269,,3,1,broad,0,0,1,0,0,0,27489269,
+Reston ebolavirus ,Ebolavirus,Filoviridae,1,(-)ssRNA,20160997,1991,1671441,N,0,0,0,0,0,0,1,0,1,10024977,,2,0,broad,0,1,1,0,0,0,21801651,10024977
+Sudan ebolavirus ,Ebolavirus,Filoviridae,1,(-)ssRNA,20160998,1977,65662,N,0,0,0,0,0,1,1,0,1,10024977,,3,1,broad,0,1,1,0,0,0,10024977,23155478
+Tai forest ebolavirus,Ebolavirus,Filoviridae,1,(-)ssRNA,20160999,1995,7746057,N,0,0,0,0,0,1,1,0,1,10024977,,2,0,broad,0,1,1,0,0,0,10024977,23155478
+Zaire ebolavirus,Ebolavirus,Filoviridae,1,(-)ssRNA,20161000,1977,65661,N,0,0,0,1,0,1,1,1,1,10024977,,4a,1,broad,0,1,1,0,0,0,10024977,23155478
+Marburg marburgvirus,Marburgvirus,Filoviridae,1,(-)ssRNA,20161002,1968,4974179,N,0,0,0,1,0,1,1,1,1,10024977,,3,1,broad,0,1,1,0,0,0,10024977,17712412
+Aroa virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162428,1971,5107116,N,1,0,0,0,0,0,0,0,0,6293325,,2,0,broad,0,0,1,0,0,0,6293325,
+Bagaza virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162429,2009,19570951,Y,1,0,0,0,0,0,0,0,0,24056604,,2,0,broad,0,0,0,1,0,0,22486922,
+Banzi virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162430,1959,13832180,N,1,0,0,0,0,0,0,0,0,6261449,,2,0,broad,0,0,1,0,0,0,6300226,
+Cacipacore virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162433,2011,21860907,N,1,0,0,0,0,0,0,0,0,28220327,,2,0,broad,0,0,1,1,0,0,28220327,11113383
+Dengue virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162437,1907,Available from external site,N,1,0,0,0,0,0,0,1,0,25052008,,4a,1,narrow,0,1,0,0,0,0,15138077,10072155
+Edge Hill virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162438,1985,3007952,Y,1,0,0,0,0,0,0,0,0,19486319,,2,0,broad,0,0,1,0,0,0,19486319,
+Gadgets Gully virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162440,1991,1657626,Y,1,0,0,0,0,0,0,0,0,19486319,,2,0,broad,0,0,0,1,0,0,19486319,
+Ilheus virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162441,1947,20285157,N,1,0,0,0,0,0,0,0,0,23875051,,2,0,broad,0,0,1,1,0,0,11359196,11113383
+Japanese encephalitis virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162443,1933,Available from external site,N,1,0,0,0,0,0,0,1,0,19786116,,3,1,broad,0,1,1,1,1,0,22883515,19523297
+Kokobera virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162448,1985,3007952,Y,1,0,0,0,0,0,0,0,0,10930658,,2,0,broad,0,0,1,0,0,0,10930658,
+Kyasanur forest disease virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162450,1957,13448774,N,1,0,0,0,0,0,0,0,0,19788811,,2,0,broad,0,1,1,0,0,0,19788811,
+Langat virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162451,1956,13369466,Y,1,0,0,0,0,0,0,0,0,22984545,19486319,2,0,broad,0,0,1,0,0,0,180846,19486319
+Louping ill virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162452,1934,19870271,N,1,0,0,0,0,0,1,0,1,24552787,10726271,2,0,broad,0,0,1,1,0,0,24552787,10726271
+Murray Valley encephalitis virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162456,1952,14909902,N,1,0,0,0,0,0,0,0,0,6299259,,2,0,broad,0,0,1,1,0,0,6299259,
+Ntaya virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162457,1952,14946416,Y,1,0,0,0,0,0,0,0,0,28606155,,2,0,broad,0,0,1,1,0,0,22996737,
+Omsk hemorrhagic fever virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162458,1947,18910918,N,1,1,0,0,0,0,0,0,0,20850178,,2,0,broad,0,0,1,0,0,0,20850178,
+Powassan virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162460,1959,13652010,N,1,0,0,0,0,0,0,0,0,20434750,,2,0,broad,0,0,1,1,1,0,3017527,
+Rio Bravo virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162461,1962,13918297,Y,0,1,0,0,0,0,0,0,0,22457530,,2,0,broad,0,0,1,0,0,0,22457530,
+St. Louis encephalitis virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162468,1933,17752093,N,1,0,0,0,0,0,0,0,0,23474474,11113383,2,0,broad,0,1,1,1,1,0,480524,23474474
+Tembusu virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162469,1975,809868,N,1,0,0,0,0,0,0,0,0,22000358,,2,0,broad,0,0,0,1,0,0,22000358,
+Tick-borne encephalitis virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162470,1938,Available from external site,N,1,0,0,0,0,0,0,0,0,18240970,,2,0,broad,0,1,1,1,0,0,18240970,22924442
+Uganda S virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162472,1952,13005679,Y,1,0,0,0,0,0,0,0,0,1659238,,2,0,broad,0,0,1,0,0,0,19741066,
+Usutu virus,Flavivirus,Flaviviridae,1,(+)ssRNA,20162473,2009,20070936,N,1,0,0,0,1,0,0,0,0,22389712,,3,1,broad,0,0,1,1,0,0,22389712,6300226
+Wesselsbron virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162474,1957,13506709,N,1,0,0,0,0,0,0,0,0,15958020,,2,0,broad,0,0,1,0,0,0,6300226,
+West Nile virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162475,1940,Available from external site,N,1,0,0,0,0,0,0,1,0,17332186,,3,1,broad,0,1,1,1,1,0,17471040,
+Yellow fever virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162477,1901,Available from external site,N,1,0,0,0,0,0,0,0,0,25672346,11113383,4a,1,broad,0,1,1,0,0,0,15138077,11113383
+Zika virus ,Flavivirus,Flaviviridae,1,(+)ssRNA,20162479,1954,13157159,N,1,0,0,1,0,0,0,1,0,21529401,,4a,1,broad,0,1,1,0,0,0,21529401,
+Hepacivirus C,Hepacivirus,Flaviviridae,1,(+)ssRNA,20162481,1989,2523562,N,0,0,0,1,1,0,1,1,1,26212868,,4b,1,narrow,1,0,0,0,0,0,19065353,
+Pegivirus A,Pegivirus,Flaviviridae,1,(+)ssRNA,20162483,1995,7475605,N,0,0,0,1,1,0,0,1,1,22752515,,4b,1,narrow,1,0,0,0,0,0,22752515,
+Bovine viral diarrhea virus 1,Pestivirus,Flaviviridae,1,(+)ssRNA,20162487,1988,2898685,N,0,1*,0,0,0,1*,0,0,1*,19833455,,2,0,broad,0,0,1,0,0,0,20638945,
+Andes orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162090,1996,8659118,N,0,1,0,0,0,0,0,0,0,15479837,,3,1,broad,0,0,1,0,0,0,12095430,
+Bayou orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162091,1995,7853545,N,0,1,0,0,0,0,0,0,0,20836801,,2,0,broad,0,0,1,0,0,0,20836801,
+Black creek canal orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162092,1995,7618284,N,0,1,0,0,0,0,0,0,0,20455779,,2,0,broad,0,0,1,0,0,0,20455779,
+Choclo orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20164779,2000,11062031,N,0,1*,0,0,0,0,0,0,1,19556568,,2,0,broad,0,0,1,0,0,0,23836565,
+Dobrava-Belgrade orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162094,1992,1351508,N,0,1,0,0,0,0,0,0,0,22877560,,2,0,broad,0,0,1,0,0,0,22877560,
+Hantaan orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162096,1978,24670,N,0,1,0,0,0,0,0,0,0,18305044,,2,0,broad,0,0,1,0,0,0,22129409,
+Laguna Negra orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162099,1997,9375015,N,0,1,0,0,0,0,0,0,0,11791973,,2,0,broad,0,0,1,0,0,0,11791973,
+Puumala orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162103,1980,6102587,N,0,1,0,0,0,0,0,0,0,22877560,,2,0,broad,0,0,1,0,0,0,22877560,
+Sangassou orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162107,2010,20187741,Y,0,1,0,0,0,0,0,0,0,22278233,,2,0,broad,0,0,1,0,0,0,22278233,
+Seoul orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162108,1982,6128079,N,0,1,0,0,0,0,0,0,0,23305714,,2,0,broad,0,0,1,0,0,0,23305714,
+Sin Nombre orthohantavirus ,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162109,1993,8235615,N,0,1,0,0,0,0,0,0,0,23110096,,2,0,broad,0,0,1,0,0,0,23110096,
+Thailand orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162110,2006,17124002,Y,0,1*,0,0,0,0,0,0,0,24575755,,2,0,broad,0,0,1,0,0,0,16953877,
+Thottapalayam orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162111,2007,17182762,N,0,1*,0,0,0,0,0,0,0,17182762,,2,0,broad,0,0,1,0,0,0,17182762,
+Tula orthohantavirus,Orthohantavirus,Hantaviridae,1,(-)ssRNA,20162113,1996,9000098,N,0,1*,0,0,0,0,1,0,1,19889769,,2,0,broad,0,0,1,0,0,0,19889769,
+Orthohepevirus A,Orthohepevirus,Hepeviridae,0,(+)ssRNA,20162905,1983,6409836,N,0,0,1,0,0,0,0,1,0,19697413,,4a,1,broad,0,1,1,1,0,0,19697413,17961279
+Crimean-Congo haemorrhagic fever orthonairovirus ,Orthonairovirus,Nairoviridae,1,(-)ssRNA,20162115,1967,6040759,N,1,0,0,0,0,0,0,0,0,22300969,10747269,3,1,broad,0,0,1,1,0,0,3140434,22889105
+Dugbe orthonairovirus ,Orthonairovirus,Nairoviridae,1,(-)ssRNA,20162117,1969,5409104,N,1,0,0,0,0,0,0,0,0,28479064,,2,0,broad,0,1,1,0,0,0,8666081,
+Thiafora orthonairovirus,Orthonairovirus,Nairoviridae,1,(-)ssRNA,20162121,1989,2570514,N,1,0,0,0,0,0,0,0,0,22864548,,2,0,broad,0,0,1,0,0,0,22864548,
+Influenza A virus,Influenzavirus A,Orthomyxoviridae,1,(-)ssRNA,20163200,1933,Available from external site,N,0,1,0,0,0,0,0,1,1,23746799,28302313,4a,1,broad,0,1,1,1,0,0,23017256,22371588
+Influenza B virus ,Influenzavirus B,Orthomyxoviridae,1,(-)ssRNA,20163202,1940,Available from external site,N,0,1,0,0,0,0,0,0,1,25268241,28302313,4a,1,broad,0,0,1,0,0,0,25673727,22710350
+Influenza C virus  ,Influenzavirus C,Orthomyxoviridae,1,(-)ssRNA,20163204,1950,14787444,N,0,1,0,0,0,0,0,0,1,23408893,28302313,4a,1,broad,0,0,1,0,0,0,9140195,1325663
+Dhori virus,Thogotovirus,Orthomyxoviridae,1,(-)ssRNA,20163211,1985,2864836,Y,1,0,0,0,0,0,0,0,0,22526290,,2,0,broad,0,0,1,1,0,0,22526290,
+Thogoto virus ,Thogotovirus,Orthomyxoviridae,1,(-)ssRNA,20163212,1969,5409104,N,1,0,0,0,0,0,0,0,0,22526290,,2,0,broad,0,0,1,0,0,0,22526290,
+Avian avulavirus 1 ,Avulavirus,Paramyxoviridae,1,(-)ssRNA,20161031,1943,Available from external site,N,0,0,1,0,0,1,0,0,1,22135263,,2,0,broad,0,0,0,1,0,0,22135263,
+Hendra henipavirus ,Henipavirus,Paramyxoviridae,1,(-)ssRNA,20161037,1995,9815409,N,0,0,0,0,0,0,0,0,1,23302882,,2,0,broad,0,0,1,0,0,0,23302882,
+Nipah henipavirus ,Henipavirus,Paramyxoviridae,1,(-)ssRNA,20161039,1999,10482278,N,0,1,1,0,0,0,0,0,1,11243752,23302882,3,1,broad,0,0,1,0,0,0,11243752,23302882
+Canine morbillivirus,Morbillivirus,Paramyxoviridae,1,(-)ssRNA,20161041,1955,13273120,N,0,1*,0,0,0,1,0,0,1*,22214864,,2,0,broad,0,1,1,0,0,0,22214864,
+Measles morbillivirus ,Morbillivirus,Paramyxoviridae,1,(-)ssRNA,20161044,1911,Available from external site,N,0,1,0,0,0,0,0,1,1,18568081,24929750,4a,1,narrow,0,1,0,0,0,0,24929750,24501402
+Human respirovirus 1 ,Respirovirus,Paramyxoviridae,1,(-)ssRNA,20161050,1958,13504446,N,0,1,0,0,0,0,0,0,0,23343342,,4a,1,narrow,0,1,0,0,0,0,26658594,
+Human respirovirus 3 ,Respirovirus,Paramyxoviridae,1,(-)ssRNA,20161051,1958,13504446,N,0,1,0,0,0,0,0,0,0,21466639,,4a,1,narrow,0,1,0,0,0,0,21466639,
+Human rubulavirus 2 ,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20161055,1956,13367330,N,0,1,0,0,0,0,0,0,0,19386708,28095926,4a,1,narrow,0,1,0,0,0,0,10769073,
+Human rubulavirus 4,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20161056,1960,14407482,N,0,1,0,0,0,0,0,0,0,19386708,28095926,4b,1,narrow,1,0,0,0,0,0,28095926,
+Mammalian rubulavirus 5,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20161059,1959,13631261,N,0,1*,0,0,0,0,0,0,1*,4291701,26583313,2,0,broad,0,1,1,0,0,0,15448364,26583313
+Mumps rubulavirus ,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20161058,1934,19870227,N,0,0,0,0,0,0,0,1,1,28068914,,4b,1,narrow,1,0,0,0,0,0,28068914,
+Simian rubulavirus,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20161061,1968,Available from external site,Y,0,1*,0,0,0,0,0,0,1*,2212992,,2,0,unknown,?,?,?,?,?,?,2212992,
+Sosuga rubulavirus,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20165119,2014,24447466,N,0,1*,0,0,0,0,0,0,1*,24447466,,2,0,narrow,0,0,1,0,0,0,24447466,
+Tioman rubulavirus,Rubulavirus,Paramyxoviridae,1,(-)ssRNA,20165121,2007,17703419,Y,0,1,0,0,0,0,0,0,1,17703419,,2,0,broad,0,0,1,0,0,0,17703419,
+Bunyamwera orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162134,1946,21020339,N,1,0,0,0,0,0,0,0,0,19501478,,2,0,broad,0,1,1,1,0,0,19501478,
+Bwamba orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162136,1941,Available from external site,N,1,0,0,0,0,0,0,0,0,12789111,,3,1,broad,0,0,1,0,0,0,12789111,
+California encephalitis orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162137,1952,13009479,N,1,0,0,0,0,0,0,0,0,21435229,,2,0,broad,0,0,1,0,0,0,6126267,21435229
+Caraparu orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162139,1961,13691675,N,1,0,0,0,0,0,0,0,0,27074162,,2,0,broad,0,1,1,0,0,0,17705031,
+Catu orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162140,1961,13691675,N,1,0,0,0,0,0,0,0,0,204207,,2,0,broad,0,1,1,0,0,0,204207,
+Guama orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162144,1961,13691675,Y,1,0,0,0,0,0,0,0,0,234206,,2,0,broad,0,1,1,0,0,0,204207,
+Guaroa orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162145,1959,13851794,N,1,0,0,0,0,0,0,0,0,20810845,,2,0,broad,0,0,1,0,0,0,1928574,20810845
+Kairi orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162147,1967,5585978,Y,1,0,0,0,0,0,0,0,0,13793361,,2,0,broad,0,0,1,0,0,0,3143273,
+Madrid orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162149,1964,14222439,N,1,0,0,0,0,0,0,0,0,24633174,,2,0,broad,0,0,1,0,0,0,16051848,
+Marituba orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162152,1961,13691675,N,1,0,0,0,0,0,0,0,0,24633174,,2,0,broad,0,1,1,0,0,0,16051848,
+Nyando orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162155,1965,14292787,N,1,0,0,0,0,0,0,0,0,28488954,,2,0,unknown,?,?,?,?,?,?,28488954,
+Oriboca orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162157,1961,13691675,N,1,0,0,0,0,0,0,0,0,16051848,,2,0,broad,0,1,1,0,0,0,16051848,
+Oropouche orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162158,1961,13683183,N,1,0,0,0,0,0,0,0,0,20727376,,3,1,broad,0,1,1,0,0,0,20727376,16318707
+Patois orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162159,1972,4400811,Y,1,0,0,0,0,0,0,0,0,3981,,2,0,broad,0,0,1,0,0,0,3981,
+Shuni orthobunyavirus,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162162,1975,1124969,N,1,0,0,0,0,0,0,0,0,24134941,,2,0,broad,0,0,1,0,0,0,22305525,
+Tacaiuma orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162164,1967,5585978,N,1,0,0,0,0,0,0,0,0,19439468,,2,0,broad,0,1,1,0,0,0,8115796,
+Wyeomyia orthobunyavirus ,Orthobunyavirus,Peribunyaviridae,1,(-)ssRNA,20162169,1965,14332846,N,1,0,0,0,0,0,0,0,0,22278828,,2,0,broad,0,0,1,0,0,0,22278828,
+Candiru phlebovirus,Phlebovirus,Phenuviridae,1,(-)ssRNA,20162173,1983,6312820,N,1,0,0,0,0,0,0,0,0,21289119,,2,0,broad,0,0,1,0,0,0,21289119,
+Punta Toro phlebovirus ,Phlebovirus,Phenuviridae,1,(-)ssRNA,20162176,1970,5491847,N,1,0,0,0,0,0,0,0,0,4206329,,2,0,broad,0,0,1,0,0,0,19393266,
+Rift Valley fever phlebovirus ,Phlebovirus,Phenuviridae,1,(-)ssRNA,20162177,1931,Available from external site,N,1,1,0,0,0,0,1,0,1,25569474,,3,1,broad,0,0,1,0,0,0,10817634,
+Sandfly fever Naples phlebovirus ,Phlebovirus,Phenuviridae,1,(-)ssRNA,20162179,1944,Available from external site,N,1,0,0,0,0,0,0,0,0,4206329,,2,0,broad,0,0,1,0,0,0,27783676,
+SFTS phlebovirus,Phlebovirus,Phenuviridae,1,(-)ssRNA,20162180,2012,21457654,N,1,0,0,0,1,0,0,0,1,25061851,,3,1,broad,0,0,1,1,0,0,27035712,24451093
+Uukuniemi phlebovirus,Phlebovirus,Phenuviridae,1,(-)ssRNA,20162181,1970,Available from external site,Y,1,0,0,0,0,0,0,0,0,23239568,,2,0,broad,0,0,1,1,0,0,23283959,
+Human picobirnavirus ,Picobirnavirus,Picobirnaviridae,0,dsRNA,20163569,1988,2898672,N,0,0,1,0,0,0,0,0,0,17245535,,4b,1,narrow,1,0,0,0,0,0,17245535,
+Equine rhinitis A virus ,Aphthovirus,Picornaviridae,0,(+)ssRNA,20161306,1962,14487261,Y,0,1*,0,0,0,0,0,0,1,15778036,,2,0,broad,0,0,1,0,0,0,15778036,
+Foot-and-mouth disease virus ,Aphthovirus,Picornaviridae,0,(+)ssRNA,20161307,1965,4290196,N,0,0,0,0,0,1,0,0,1,18834510,,2,0,broad,0,0,1,0,0,0,18834510,
+Cardiovirus A,Cardiovirus,Picornaviridae,0,(+)ssRNA,20161315,1947,20340975,N,0,1,0,0,0,0,0,0,0,15099508,,2,0,broad,0,1,1,0,0,0,9833886,21323673
+Cardiovirus B,Cardiovirus,Picornaviridae,0,(+)ssRNA,20161316,1963,14087883,N,0,0,1,0,0,0,0,0,0,20410900,,4a,1,broad,0,0,1,0,0,0,20410900,
+Cosavirus A,Cosavirus,Picornaviridae,0,(+)ssRNA,20161319,2008,19033469,N,0,1,1,0,0,0,0,0,1,27631733,19033469,4b,1,narrow,1,0,0,0,0,0,19033469,22615791
+Cosavirus B,Cosavirus,Picornaviridae,0,(+)ssRNA,20165190,2008,19033469,N,0,1*,1*,0,0,0,0,0,1*,27631733,19033469,4b,1,narrow,1,0,0,0,0,0,19033469,22615791
+Cosavirus D,Cosavirus,Picornaviridae,0,(+)ssRNA,20165191,2008,19033469,N,0,1*,1*,0,0,0,0,0,1*,27631733,19033469,4b,1,narrow,1,0,0,0,0,0,19033469,22615791
+Cosavirus E,Cosavirus,Picornaviridae,0,(+)ssRNA,20165192,2008,19102772,N,0,1*,1*,0,0,0,0,0,1*,27631733,19033469,4b,1,narrow,1,0,0,0,0,0,22615791,
+Cosavirus F,Cosavirus,Picornaviridae,0,(+)ssRNA,20165193,2012,22615791,N,0,1*,1*,0,0,0,0,0,1*,27631733,19033469,4b,1,narrow,1,0,0,0,0,0,22615791,
+Enterovirus A,Enterovirus,Picornaviridae,0,(+)ssRNA,20161323,1949,15391667,N,0,0,1,0,0,0,0,1,0,5415578,,4a,1,narrow,0,1,0,0,0,0,16943351,23097448
+Enterovirus B,Enterovirus,Picornaviridae,0,(+)ssRNA,20161324,1949,15391667,N,0,0,1,0,0,0,0,1,0,26053872,,4a,1,narrow,0,1,1,0,0,0,23097448,
+Enterovirus C,Enterovirus,Picornaviridae,0,(+)ssRNA,20161325,1909,Available from external site,N,0,0,1,0,0,0,0,1,0,9203732,,4a,1,narrow,0,1,0,0,0,0,25079078,
+Enterovirus D,Enterovirus,Picornaviridae,0,(+)ssRNA,20161326,1967,4960233,N,0,0,1,0,0,0,0,0,0,28367789,,4a,1,narrow,0,1,0,0,0,0,21345956,
+Enterovirus E,Enterovirus,Picornaviridae,0,(+)ssRNA,20161327,1961,13773015,Y,0,0,1*,0,0,0,0,0,0,28367789,,2,0,broad,0,0,1,0,0,0,24830424,
+Rhinovirus A,Enterovirus,Picornaviridae,0,(+)ssRNA,20161332,1953,13097995,N,0,1,0,0,0,1,0,0,1,6261689,205151,4b,1,narrow,1,0,0,0,0,0,6312099,
+Rhinovirus B,Enterovirus,Picornaviridae,0,(+)ssRNA,20161333,1960,13840115,N,0,1,0,0,0,1,0,0,1,6261689,205151,4b,1,narrow,1,0,0,0,0,0,6312099,
+Rhinovirus C,Enterovirus,Picornaviridae,0,(+)ssRNA,20161334,2007,17804649,N,0,1,0,0,0,1,0,0,1,6261689,205151,4b,1,narrow,1,0,0,0,0,0,6312099,
+Erbovirus A,Erbovirus,Picornaviridae,0,(+)ssRNA,20161336,2005,15778036,Y,0,1*,0,0,0,1*,0,0,1*,15778036,,2,0,broad,0,0,1,0,0,0,23960171,
+Hepatovirus A,Hepatovirus,Picornaviridae,0,(+)ssRNA,20161340,1973,4356028,N,0,0,1,0,0,0,0,1,0,25050760,,4a,1,narrow,0,1,0,0,0,0,26575627,
+Aichivirus A,Kobuvirus,Picornaviridae,0,(+)ssRNA,20161344,1991,1658159,N,0,0,1,0,0,0,0,0,0,25996404,,4b,1,narrow,1,0,0,0,0,0,25996404,
+Parechovirus A,Parechovirus,Picornaviridae,0,(+)ssRNA,20161362,1958,13538681,N,0,0,1,0,0,0,0,0,0,11438028,16220089,4a,1,narrow,0,1,0,0,0,0,17311340,20587198
+Parechovirus B,Parechovirus,Picornaviridae,0,(+)ssRNA,20161363,2003,12745669,N,0,0,1*,0,0,0,0,0,0,26489898,,2,0,broad,0,1,1,0,0,0,17311340,23665770
+Salivirus A,Salivirus,Picornaviridae,0,(+)ssRNA,20161375,2009,19538752,N,0,0,1*,0,0,0,0,0,0,26193371,,4a,1,unknown,?,?,?,?,?,?,25889358,
+Avian metapneumovirus,Metapneumovirus,Pneumoviridae,1,(-)ssRNA,20161065,2011,21736487,Y,0,1*,0,0,0,0,0,0,1*,24637582,22874773,2,0,broad,0,0,0,1,0,0,23763901,24756465
+Human metapneumovirus,Metapneumovirus,Pneumoviridae,1,(-)ssRNA,20161066,2001,11385510,N,0,1,0,0,0,1,0,0,1,22874773,,4a,1,narrow,0,1,0,0,0,0,25091145,25417845
+Human orthopneumovirus ,Orthopneumovirus,Pneumoviridae,1,(-)ssRNA,20161069,1957,13478578,N,0,1,0,0,0,1,0,0,0,28458916,,4a,1,narrow,0,1,0,0,0,0,22931057,
+Colorado tick fever virus ,Coltivirus,Reoviridae,0,dsRNA,20164155,1946,19871512,N,1,0,0,0,0,0,0,0,0,17126919,,3,1,broad,0,0,1,0,0,0,17126919,
+Eyach virus,Coltivirus,Reoviridae,0,dsRNA,20164156,1980,6106383,Y,1,0,0,0,0,0,0,0,0,6508529,22526290,2,0,broad,0,0,1,0,0,0,16318717,
+Corriparta virus,Orbivirus,Reoviridae,0,dsRNA,20164111,1967,Available from external site,Y,1,0,0,0,0,0,0,0,0,19766284,27213426,2,0,broad,0,0,1,1,0,0,27213426,
+Great Island virus ,Orbivirus,Reoviridae,0,dsRNA,20164115,1963,14071281,N,1,0,0,0,0,0,0,0,0,26350980,16216136,2,0,broad,0,0,1,1,0,0,16216136,26350980
+Lebombo virus ,Orbivirus,Reoviridae,0,dsRNA,20164117,1975,1124969,N,1,0,0,0,0,0,0,0,0,24475112,,2,0,broad,0,0,1,0,0,0,24475112,
+Orungo virus ,Orbivirus,Reoviridae,0,dsRNA,20164118,1976,973798,N,1,0,0,0,0,0,0,0,0,24475112,,2,0,broad,0,1,1,0,0,0,24475112,
+Mammalian orthoreovirus,Orthoreovirus,Reoviridae,0,dsRNA,20164199,1954,13237336,N,0,1*,0,0,0,0,0,0,0,22905211,,4a,1,broad,0,1,1,0,0,0,22931153,15964158
+Nelson Bay orthoreovirus,Orthoreovirus,Reoviridae,0,dsRNA,20164200,2007,17592121,N,0,1,0,0,0,0,0,0,0,22905211,,3,1,broad,0,0,1,0,0,0,22931153,
+Rotavirus A ,Rotavirus,Reoviridae,0,dsRNA,20164133,1973,4127639,N,0,0,1,0,0,0,0,1,1,21575246,18712810,4a,1,broad,0,1,1,1,0,0,18712810,2122998
+Rotavirus B ,Rotavirus,Reoviridae,0,dsRNA,20164134,1984,6144874,N,0,0,1,0,0,0,0,1,1,9230391,,4a,1,broad,0,0,1,0,0,0,9230391,
+Rotavirus C ,Rotavirus,Reoviridae,0,dsRNA,20164135,1986,3009541,N,0,0,1,0,0,0,0,1,1,28558823,,4a,1,broad,0,0,1,0,0,0,18712810,
+Rotavirus H,Rotavirus,Reoviridae,0,dsRNA,20164140,1998,10921117,N,0,0,1,0,0,0,0,0,1,26658066,,3,1,broad,0,0,1,0,0,0,26658066,
+Banna virus ,Seadornavirus,Reoviridae,0,dsRNA,20164142,1990,Available from external site,N,1,0,0,0,0,0,0,0,0,18680655,,2,0,broad,0,0,1,0,0,0,18680655,
+Primate T-lymphotropic virus 1 ,Deltaretrovirus,Retroviridae,1,ssRNA-RT,20164226,1980,6261256,N,0,0,0,1,0,0,0,1,1,15911757,,4a,1,narrow,0,1,0,0,0,0,8627240,
+Primate T-lymphotropic virus 2 ,Deltaretrovirus,Retroviridae,1,ssRNA-RT,20164227,1982,6981847,N,0,0,0,1,0,0,0,1,1,15911757,,4a,1,narrow,0,1,0,0,0,0,8627240,
+Primate T-lymphotropic virus 3,Deltaretrovirus,Retroviridae,1,ssRNA-RT,20164228,2005,15882466,N,0,0,0,1,0,0,0,1,1,15911757,,4a,1,narrow,0,1,0,0,0,0,8627240,
+Human immunodeficiency virus 1 ,Lentivirus,Retroviridae,1,ssRNA-RT,20164256,1983,6189183,N,0,0,0,1,1,0,1,1,1,7962552,,4b,1,narrow,1,0,0,0,0,0,17507975,
+Human immunodeficiency virus 2 ,Lentivirus,Retroviridae,1,ssRNA-RT,20164257,1986,3006256,N,0,0,0,1,1,0,1,1,1,27530215,,4b,1,narrow,1,0,0,0,0,0,17507975,
+Simian immunodeficiency virus,Lentivirus,Retroviridae,1,ssRNA-RT,20164259,1992,1353193,N,0,0,0,0,1,0,1,0,1,22673358,,2,0,narrow,0,1,0,0,0,0,17507975,
+African green monkey simian foamy virus,Spumavirus,Retroviridae,1,ssRNA-RT,20164263,1997,9151878,N,0,0,0,0,0,0,1,0,1,10516034,,2,0,narrow,0,1,0,0,0,0,10516034,
+Macaque simian foamy virus,Spumavirus,Retroviridae,1,ssRNA-RT,20164267,2002,12241782,N,0,0,0,0,0,0,1,0,1,24109214,,2,0,narrow,0,1,0,0,0,0,24109214,
+Simian foamy virus,Spumavirus,Retroviridae,1,ssRNA-RT,20164268,1971,4998605,N,0,0,0,0,0,0,1,0,1,16608518,,2,0,narrow,0,1,0,0,0,0,19485797,
+Australian bat lyssavirus,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161095,1998,9775399,N,0,0,0,0,0,0,1,0,1,28033365,,2,0,broad,0,0,1,0,0,0,28033365,
+Duvenhage lyssavirus ,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161097,1971,5106834,N,0,0,0,0,0,0,1,0,1,19636367,,2,0,broad,0,0,1,0,0,0,19636367,
+European bat 1 lyssavirus,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161098,1989,2576595,N,0,0,0,0,0,0,1,0,1,18205973,,2,0,broad,0,0,1,0,0,0,18632972,25192547
+European bat 2 lyssavirus,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161099,1986,2868310,N,0,0,0,0,0,0,1,0,1,18205973,,2,0,broad,0,0,1,0,0,0,22937876,
+Irkut lyssavirus,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161101,2013,23505588,N,0,0,0,0,0,0,1,0,1,16705370,,2,0,broad,0,0,1,0,0,0,23505588,
+Mokola lyssavirus ,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161104,1972,4635777,N,0,0,0,0,0,0,1*,0,1*,4772939,,2,0,broad,0,0,1,1,0,0,4772939,
+Rabies lyssavirus,Lyssavirus,Rhabdoviridae,1,(-)ssRNA,20161105,1903,Available from external site,N,0,0,0,0,1,0,1,0,1,23597620,,3,1,broad,0,1,1,1,0,0,6749977,22612895
+Bas-Congo tibrovirus,Tibrovirus,Rhabdoviridae,1,(-)ssRNA,20165169,2012,23028323,N,1*,0,0,0,0,0,0,0,1*,23028323,,3,1,unknown,?,?,?,?,?,?,23028323,
+Ekpoma 1 tibrovirus ,Tibrovirus,Rhabdoviridae,1,(-)ssRNA,20165170,2015,25781465,N,?,?,?,?,?,?,?,?,?,23028323,,2,?,unknown,?,?,?,?,?,?,23028323,
+Ekpoma 2 tibrovirus,Tibrovirus,Rhabdoviridae,1,(-)ssRNA,20165171,2015,25781465,N,?,?,?,?,?,?,?,?,?,23028323,,2,?,unknown,?,?,?,?,?,?,23028323,
+Alagoas vesiculovirus ,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161153,1967,4291620,Y,1,0,0,0,0,0,0,0,0,3034087,23034141,2,0,broad,0,0,1,0,0,0,16021308,
+Chandipura vesiculovirus ,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161155,1967,4970067,N,1,0,0,0,0,0,0,0,0,22721825,,2,0,broad,0,1,1,0,0,0,22721825,15929402
+Cocal vesiculovirus,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161156,1964,14103231,N,1,0,0,0,0,0,0,0,0,21830071,,2,0,broad,0,0,1,0,0,0,21830071,
+Indiana vesiculovirus ,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161157,1958,13549332,N,1,0,0,0,0,0,0,0,0,4335268,,2,0,broad,0,1,1,0,0,0,12296402,
+Isfahan vesiculovirus,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161158,1977,192094,Y,1,0,0,0,0,0,0,0,0,192094,,2,0,broad,0,0,1,0,0,0,192094,
+Maraba vesiculovirus,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161159,1984,6091472,Y,1,0,0,0,0,0,0,0,0,6091472,,2,0,broad,0,0,1,0,0,0,6091472,
+New Jersey vesiculovirus ,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161160,1950,14784641,N,1,0,0,0,0,0,0,0,0,23034141,,2,0,broad,0,0,1,0,0,0,12296402,
+Piry vesiculovirus ,Vesiculovirus,Rhabdoviridae,1,(-)ssRNA,20161161,1974,4604602,N,1,0,0,0,0,0,0,0,0,4097557,,2,0,broad,0,1,1,0,0,0,6747282,
+Barmah Forest virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164301,1986,3767767,N,1,0,0,0,0,0,0,0,0,21752915,,3,1,broad,0,0,1,0,0,0,21752915,
+Chikungunya virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164304,1956,13346078,N,1,0,0,0,0,0,0,1,0,20519386,,4a,1,broad,0,1,1,0,0,0,21118930,20889861
+Eastern equine encephalitis virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164305,1938,17843373,N,1,0,0,0,0,0,0,0,0,10466964,,2,0,broad,0,0,1,1,1,0,10466964,
+Everglades virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164307,1970,5410814,N,1,0,0,0,0,0,0,0,0,17326938,,2,0,broad,0,0,1,0,0,0,17326938,
+Getah virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164309,1974,4214338,Y,1,0,0,0,0,0,0,0,0,23268691,,2,0,broad,0,0,1,0,0,0,25898181,
+Highlands J virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164310,2000,11057975,Y,1,0,0,0,0,0,0,0,0,19651164,,2,0,broad,0,0,1,1,0,0,2849884,8827668
+Mayaro virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164312,1957,13487973,N,1,0,0,0,0,0,0,0,0,9037738,,2,0,broad,0,1,1,1,0,0,14609474,
+Mosso das Pedras virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164314,2013,24349588,Y,1,0,0,0,0,0,0,0,0,17947533,,2,0,broad,0,0,1,0,0,0,17947533,
+Mucambo virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164315,1965,14292756,N,1,0,0,0,0,0,0,0,0,17947533,,2,0,broad,0,1,1,0,0,0,17947533,
+Ndumu virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164316,1961,13757662,Y,1,0,0,0,0,0,0,0,0,23006778,,2,0,broad,0,0,1,0,0,0,23006778,
+O'nyong-nyong virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164317,1961,13785469,N,1,0,0,0,0,0,0,0,0,10466973,,3,1,broad,0,0,1,0,0,0,10466973,
+Pixuna virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164318,1991,1844977,N,1,0,0,0,0,0,0,0,0,19402767,,2,0,broad,0,0,1,0,0,0,19402767,
+Rio Negro virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164319,1993,8153352,Y,1,0,0,0,0,0,0,0,0,19402767,,2,0,broad,0,0,1,0,0,0,19402767,
+Ross River virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164320,1972,5040017,N,1,0,0,0,0,0,0,0,0,24799374,,3,1,broad,0,0,1,1,0,0,23054414,17360861
+Semliki Forest virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164322,1979,424742,N,1,0,0,0,0,0,0,0,0,12491154,,3,1,broad,0,1,1,0,0,0,17947533,
+Sindbis virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164323,1955,13259009,N,1,0,0,0,0,0,0,0,0,15554947,,2,0,broad,0,0,1,1,0,0,15554947,
+Tonate virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164325,1976,1020877,N,1,0,0,0,0,0,0,0,0,11463116,,2,0,broad,0,0,1,1,0,0,11463116,7435797
+Una virus,Alphavirus,Togaviridae,1,(+)ssRNA,20164327,1963,14070772,Y,1,0,0,0,0,0,0,0,0,23085307,,2,0,broad,0,1,1,0,0,0,17947533,17658571
+Venezuelan equine encephalitis virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164328,1943,19871301,N,1,0,0,0,0,0,0,0,0,22989182,,3,1,broad,0,0,1,1,0,0,2863991,7563415
+Western equine encephalitis virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164329,1938,17736946,N,1,0,0,0,0,0,0,0,0,22989182,,2,0,broad,0,0,1,1,1,0,2863991,
+Whataroa virus ,Alphavirus,Togaviridae,1,(+)ssRNA,20164330,1964,14244706,Y,1,0,0,0,0,0,0,0,0,15381803,,2,0,broad,0,0,1,1,0,0,17947533,
+Rubella virus ,Rubivirus,Togaviridae,1,(+)ssRNA,20164332,1942,Available from external site,N,0,1,0,0,0,0,0,1,1,22855483,,4b,1,narrow,1,0,0,0,0,0,22855483,17038700
+Hepatitis delta virus ,Deltavirus,Unassigned,1,(-)ssRNA,20164479,1977,75123,N,0,0,0,0,1,0,1,0,0,12534779,,4b,1,narrow,1,0,0,0,0,0,23523924,12534779
