@@ -345,36 +345,54 @@ lapply(Resps, function(a){
 
 # Validating the model and getting deviance contributions 
 
-Iterations = 10
+load("Iceberg Output Files/NEGams.Rdata")
 
-Resps <- PredReps[2:5]
+Iterations = 1
+
+Resps <- paste0("A.", PredReps[c(2,5)])
 
 RandomPredictionList <- DevianceList <- list()
 
 RealPredictions <- InterceptPredictions <- list()
 
-y = "Futures1"
-r = "OverlapSum"
+x <- 2
+r <- "NoBat"
 
-PredictCovar <- c("Richness", "Elevation", "Temperature", "Precipitation")
-CategoryCovar <- names(LandUse)
+PredictCovar <- c("Richness", "Elevation", "Temperature", "Precipitation")[1:2]
+CategoryCovar <- "HabitatType"
 
-for(y in Resps){
+NEPredictModels <- NEPredictModels %>% unlist(recursive = F)
+
+for(y in Resps[1]){
   
   print(y)
   
+  if(str_detect(y, "1")){
+    
+    x <- 2
+    r2 <- "SomeBatOverlap.Futures1A"
+    r2 <- "NoBatOverlap.Futures1A"
+    
+  }else{
+    
+    x <- 5
+    r2 <- "SomeBatOverlap.Futures4A"
+    r2 <- "NoBatOverlap.Futures4A"
+    
+  }
+  
   RandomPredictionList[[y]] <- DevianceList[[y]] <- list()
   
-  RealOutcomes <- TestDFList[[Pipeline]][[PredReps[x]]][[r]]
+  RealOutcomes <- TestDFList[[Pipeline]][[PredReps[x]]][[r2]]
   
   RealPredictions[[y]] <- predict.bam(NEPredictModels[[y]][[r]], 
                                       newdata = TestDFList[[Pipeline]][[PredReps[x]]]) %>% exp
   
   InterceptPredictions[[y]] <- rep(mean(RealPredictions[[y]]), nrow(TestDFList[[Pipeline]][[PredReps[x]]]))
   
-  for(x in PredictCovar){
+  for(z in PredictCovar){
     
-    print(x)
+    print(z)
     
     for(i in 1:Iterations){
       
@@ -382,23 +400,23 @@ for(y in Resps){
       
       PredDF <- TestDFList[[Pipeline]][[PredReps[x]]]
       
-      PredDF[,x] <- PredDF %>% slice(sample(1:n())) %>% pull(x)
+      PredDF[,z] <- PredDF %>% slice(sample(1:n())) %>% pull(z)
       
       Predictions <- predict.bam(NEPredictModels[[y]][[r]], newdata = PredDF)
       
-      RandomPredictionList[[x]][[i]] <- Predictions %>% exp
+      RandomPredictionList[[z]][[i]] <- Predictions %>% exp
       
-      ModelLikelihood = (RealOutcomes*log(RandomPredictionList[[x]][[i]]) - RandomPredictionList[[x]][[i]]) %>% sum
+      ModelLikelihood = (RealOutcomes*log(RandomPredictionList[[z]][[i]]) - RandomPredictionList[[z]][[i]]) %>% sum
       
       Deviance = -2*ModelLikelihood
       
-      DevianceList[[y]][[x]][[i]] <- Deviance
+      DevianceList[[y]][[z]][[i]] <- Deviance
     }
   }
   
-  for(x in CategoryCovar){
+  for(z in CategoryCovar){
     
-    print(x)
+    print(z)
     
     for(i in 1:Iterations){
       
@@ -406,27 +424,39 @@ for(y in Resps){
       
       PredDF <- TestDFList[[Pipeline]][[PredReps[x]]]
       
-      PredDF[,x] <- PredDF %>% slice(sample(1:n())) %>% pull(x)
+      PredDF[,z] <- PredDF %>% slice(sample(1:n())) %>% pull(z)
       
-      Predictions <- predict.bam(NEPredictModels[[y]][[r]], 
+      Predictions <- predict.bam(NEPredictModels[[y]][["SomeBat"]], 
                                  newdata = PredDF)
       
-      RandomPredictionList[[x]][[i]] <- Predictions %>% exp
+      RandomPredictionList[[z]][[i]] <- Predictions %>% exp
       
-      ModelLikelihood = (RealOutcomes*log(RandomPredictionList[[x]][[i]]) - RandomPredictionList[[x]][[i]]) %>% sum
+      ModelLikelihood = (RealOutcomes*log(RandomPredictionList[[z]][[i]]) - RandomPredictionList[[z]][[i]]) %>% sum
       
       Deviance = -2*ModelLikelihood
       
-      DevianceList[[y]][[x]][[i]] <- Deviance
+      DevianceList[[y]][[z]][[i]] <- Deviance
     }
   }
 }
 
 RealDeviance <- InterceptDeviance <- list()
 
-for(y in Resps){
+for(y in Resps[1]){
   
   print(y)
+  
+  if(str_detect(y, "1")){
+    
+    r <- "SomeBatOverlap.Futures1A"
+    r <- "NoBatOverlap.Futures1A"
+    
+  }else{
+    
+    r <- "SomeBatOverlap.Futures1D"
+    r <- "NoBatOverlap.Futures1D"
+    
+  }
   
   RealModelLikelihood = (TestDFList[[Pipeline]][[PredReps[x]]][[r]]*log(RealPredictions[[y]]) - RealPredictions[[y]]) %>% sum
   RealDeviance[[y]] = -2*RealModelLikelihood
