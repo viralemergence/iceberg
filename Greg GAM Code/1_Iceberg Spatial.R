@@ -206,7 +206,6 @@ for(Pipeline in LETTERS[1:4]){
       IcebergAdjList[[Pipeline]][[x]] <- NewAdj[CurrentSpecies, CurrentSpecies]
     }
   }
-  
 }
 
 saveRDS(IcebergAdjList, file = paste0("Iceberg Output Files/","IcebergAdjList.rds"))

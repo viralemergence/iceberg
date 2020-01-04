@@ -298,7 +298,6 @@ for(Pipeline in PipelineReps){
       
       SubSums <- as.numeric(rowSums(ValueDF[,c(Sp1,Sp2)])>1)
       OverlapSums <- OverlapSums + SubSums
-      # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
       
       OverlapSharingSums <- OverlapSharingSums +
         

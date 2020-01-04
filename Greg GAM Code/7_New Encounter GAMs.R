@@ -1,6 +1,8 @@
 
 # Rscript "Final Iceberg Code/7_New Encounter GAMs.R" ####
 
+# rm(list = ls())
+
 library(raster); library(tidyverse); library(mgcv); library(cowplot)
 
 NewIntersects <- readRDS("~/Albersnet/Iceberg Output Files/NewIntersects.rds")
@@ -49,11 +51,13 @@ BlankDF[,c("Elevation", "Temperature", "Precipitation")] <- cbind(
 NewIntersects[,c("Elevation", "Temperature", "Precipitation")] <- 
   BlankDF[,c("Elevation", "Temperature", "Precipitation")]
 
+NewIntersects %>% mutate(Elevation = Elevation - min(Elevation, na.rm = T)) -> NewIntersects
+
 GridDF <- readRDS("~/Albersnet/Iceberg Output Files/CurrentsGridDF.rds") 
 
 HabitatTypes <- c("Forest", "Nonforest", "Urban", "Cropland", "Rangeland")
 
-for(Pipeline in PipelineReps[c(1,4)]){
+for(Pipeline in PipelineReps[c(1,3)]){
   
   print(Pipeline)
   
@@ -71,34 +75,45 @@ for(Pipeline in PipelineReps[c(1,4)]){
     for(Resp in Resps){
       
       TestDF <- NewIntersects %>%  
-        mutate(Overlaps = NewIntersects[,paste0(Resp,"Overlap.",PredReps[x],Pipeline)])
+        mutate(Overlaps = NewIntersects[,paste0(Resp,"Overlap.",PredReps[x],Pipeline)] %>% add(1) %>% log)
       
       if(Pipeline%in%c("A","C")){
         
         TestDF$Richness <- GridDF$ClimateLandUse
         
+        TestDF$Richness <- log10(GridDF$ClimateLandUse + 1)
+        
       }else{
         
         TestDF$Richness <- GridDF$Climate
         
+        TestDF$Richness <- log10(GridDF$Climate + 1)
+        
       }
+      
+      TestDF$Elevation <- log10(TestDF$Elevation + 1)
       
       LandUse <- brick(paste0("Iceberg Input Files/","ssp",((1:5)[-3])[x-1], "landusemax", ".tif"))
       
       TestDF$HabitatType <- HabitatTypes[values(LandUse)[-Sea]] %>% as.factor
       
-      TestDF %>% na.omit() -> 
+      TestDF %>% 
+        #filter(Elevation>0) %>%
+        na.omit() -> 
         TestDF ->
         TestDFList[[Pipeline]][[PredReps[x]]]
       
       Covar <- c(paste0("s(",c("Richness", 
                                "Elevation"),")"), "HabitatType")
       
+      Covar <- c("Richness", "Elevation", "HabitatType")
+      
       Formula <- Covar %>% paste(collapse = " + ") %>% paste0("Overlaps ~ ", .) %>% as.formula()
       
       NEPredictModels[[Pipeline]][[PredReps[x]]][[Resp]] <- bam(Formula,
                                                                 data = TestDF, 
-                                                                family = nb()
+                                                                #family = nb()#, 
+                                                                family = gaussian()
       )
       
       # Predicting lines ####
@@ -129,7 +144,7 @@ for(Pipeline in PipelineReps[c(1,4)]){
                                      se.fit = T)
       
       FitList[[Pipeline]][[PredReps[x]]][[Resp]][,c("Fit","Lower", "Upper")] <- (with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
-      FitList[[Pipeline]][[PredReps[x]]][[Resp]][,c("Fit","Lower", "Upper")] <- exp(with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
+      # FitList[[Pipeline]][[PredReps[x]]][[Resp]][,c("Fit","Lower", "Upper")] <- exp(with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
       
     }
     
@@ -142,7 +157,7 @@ FullDataDF <- TestDFList %>% lapply(function(a){
   
 }) %>% bind_rows(.id = "Pipeline") %>% mutate(Rep = paste0(PredRep, Pipeline))
 
-for(Pipeline in PipelineReps[c(1,4)]){
+for(Pipeline in PipelineReps[c(1,3)]){
   print(Pipeline)
   for(x in (2:length(PredReps))[c(1,4)]){
     print(PredReps[x])
@@ -169,147 +184,12 @@ for(Pipeline in PipelineReps[c(1,4)]){
                                      newdata = FitList[[Pipeline]][[PredReps[x]]][[Resp]],
                                      se.fit = T)
       FitList[[Pipeline]][[PredReps[x]]][[Resp]][,c("Fit","Lower", "Upper")] <- (with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
-      FitList[[Pipeline]][[PredReps[x]]][[Resp]][,c("Fit","Lower", "Upper")] <- exp(with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
+      # FitList[[Pipeline]][[PredReps[x]]][[Resp]][,c("Fit","Lower", "Upper")] <- exp(with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
     }
   }
 }
 
-
 save(FitList, FullDataDF, NEPredictModels, file = "Iceberg Output Files/NEGams.Rdata")
-
-FitList %>% unlist(recursive = F) %>% bind_rows() %>%
-  filter(Elevation == last(unique(Elevation))) %>%
-  ggplot(aes(Richness, Fit, group = HabitatType)) + 
-  geom_point(data = FullDataDF, inherit.aes = F, aes(x = Richness, y = Overlaps), alpha = 0.1, colour = AlberColours[[2]]) + 
-  geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-  geom_line() + #  scale_y_log10() +
-  labs(y = "Overlaps", x = "Richness") +
-  facet_wrap(~Rep, ncol = 4, scales = "free") +
-  ggsave("NEGams_Richness.jpeg", units = "mm", dpi = 300, width = 400, height = 400)
-
-FitList %>% unlist(recursive = F)  %>% unlist(recursive = F) %>% bind_rows() %>% 
-  group_by(Rep) %>% summarise(Rich = last(Richness)) %>% 
-  pull(Rich) %>% unique() -> Richnesses
-
-FitList %>% unlist(recursive = F) %>% bind_rows() %>%
-  filter(Richness %in% Richnesses) %>%
-  ggplot(aes(Elevation, Fit, group = HabitatType)) + 
-  geom_point(data = FullDataDF, inherit.aes = F, aes(x = Elevation, y = Overlaps), alpha = 0.1, colour = AlberColours[[2]]) + 
-  geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-  geom_line() + #  scale_y_log10() +
-  labs(y = "Overlaps", x = "Elevation") +
-  facet_wrap(~Rep, ncol = 4, scales = "free") +
-  ggsave("NEGams_Elevation.jpeg", units = "mm", dpi = 300, width = 400, height = 400)
-
-plot_grid(FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Elevation == last(unique(Elevation))) %>%
-            ggplot(aes(Richness, Fit)) + 
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Richness, y = OverlapSum), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-            geom_line() + #  scale_y_log10() +
-            labs(y = "Overlaps", x = "Richness"),
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness))) %>%
-            ggplot(aes(Elevation, Fit))+
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Elevation, y = OverlapSum), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-            geom_line() + # scale_y_log10() +
-            labs(y = "Overlaps", x = "Elevation")
-)
-
-plot_grid(FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Elevation == last(unique(Elevation)),
-                   Temperature == last(unique(Temperature)),
-                   Precipitation == last(unique(Precipitation))) %>%
-            ggplot(aes(Richness, Fit)) + 
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Richness, y = OverlapSum), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Richness"),
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness)),
-                   Temperature == last(unique(Temperature)),
-                   Precipitation == last(unique(Precipitation))) %>%
-            ggplot(aes(Elevation, Fit))+
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Elevation, y = OverlapSum), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Elevation"), 
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness)),
-                   Precipitation == last(unique(Precipitation)),
-                   Elevation == last(unique(Elevation))) %>%
-            ggplot(aes(Temperature, Fit)) + 
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Temperature, y = OverlapSum), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Temperature"),
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness)),
-                   Temperature == last(unique(Temperature)),
-                   Elevation == last(unique(Elevation))) %>%
-            ggplot(aes(Precipitation, Fit))+
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Precipitation, y = OverlapSum), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Precipitation"), 
-          
-          ncol = 2
-          
-)
-
-plot_grid(FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Elevation == last(unique(Elevation)),
-                   Temperature == last(unique(Temperature)),
-                   Precipitation == last(unique(Precipitation))) %>%
-            ggplot(aes(Richness, log(Fit+1))) + 
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Richness, y = log(OverlapSum + 1)), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = log(Lower+1), ymax = log(Upper+1)), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Richness"),
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness)),
-                   Temperature == last(unique(Temperature)),
-                   Precipitation == last(unique(Precipitation))) %>%
-            ggplot(aes(Elevation, log(Fit+1))) +
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Elevation, y = log(OverlapSum + 1)), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = log(Lower+1), ymax = log(Upper+1)), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Elevation"), 
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness)),
-                   Precipitation == last(unique(Precipitation)),
-                   Elevation == last(unique(Elevation))) %>%
-            ggplot(aes(Temperature, log(Fit+1))) + 
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Temperature, y = log(OverlapSum + 1)), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = log(Lower+1), ymax = log(Upper+1)), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Temperature"),
-          
-          FitList[[Pipeline]][[PredReps[x]]] %>% 
-            filter(Richness == last(unique(Richness)),
-                   Temperature == last(unique(Temperature)),
-                   Elevation == last(unique(Elevation))) %>%
-            ggplot(aes(Precipitation, log(Fit+1)))+
-            geom_point(data = TestDFList[[Pipeline]][[PredReps[x]]], inherit.aes = F, aes(x = Precipitation, y = log(OverlapSum + 1)), alpha = 0.1, colour = AlberColours[[2]]) + 
-            geom_ribbon(aes(ymin = log(Lower+1), ymax = log(Upper+1)), alpha = 0.2, colour = NA) +
-            geom_line() +
-            labs(y = "Overlaps", x = "Precipitation"), 
-          
-          ncol = 2
-          
-)
-
-PredDF <- TestDFList[[Pipeline]][[PredReps[x]]]
-TestDFList[[Pipeline]][[PredReps[x]]]$Fit <- predict.gam(Model)
-
-TestDFList[[Pipeline]][[PredReps[x]]] %>% ggplot(aes(X, Y, fill = exp(Fit))) + geom_tile() + scale_fill_continuous_sequential(palette = "Terrain")
 
 # New version of GAM output figure ####
 
@@ -478,3 +358,4 @@ lapply(Resps[1], function(a){
 }) -> DevianceDFList
 
 names(DevianceDFList) <- Resps
+

@@ -8,7 +8,7 @@ library(mgcv); library(tidyverse); library(ggregplot); library(MASS); library(co
 library(ggregplot); library(parallel); library(igraph); 
 library(Matrix); library(ROCR)
 
-# source("Final Iceberg Code/2_Iceberg Data Import.R")
+source("Iceberg Greg GAMM Code/2_Iceberg Data Import.R")
 
 PipelineReps = LETTERS[1:4]
 
@@ -163,7 +163,7 @@ if(Output){
   
   # pdf("GAMOutput.pdf", width = 9, height = 8)
   
-  Pipeline == "A"
+  Pipeline <- "A"
   
   plot_grid(FitList[[Pipeline]] %>% 
               filter(!is.na(SpaceQuantile)) %>%
@@ -306,14 +306,14 @@ if(Output){
   
   Predictions1b <- Predictions1b %>% as.data.frame
   
-  N = nrow(FinalHostMatrix)
+  N = nrow(DataList[[1]])
   
   PredList1b <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
     
     Predictions1b[,"Spp"] <- sample(SpCoef, N, replace = T) + 
       sample(SpCoef, N, replace = T)
     
-    Predictions[,"Intercept"] <- Intercept1b
+    Predictions1b[,"Intercept"] <- Intercept1b
     
     BinPred <- rbinom(n = N,
                       prob = logistic(rowSums(Predictions1b)),
@@ -370,7 +370,7 @@ if(Output){
   
   PredList1c <- parallel::mclapply(1:1000, function(x){ # to do something non-specific
     
-    Predictions[,"Intercept"] <- Intercept1c
+    Predictions1c[,"Intercept"] <- Intercept1c
     
     BinPred <- rbinom(n = N,
                       prob = logistic(rowSums(Predictions1c)),
@@ -381,7 +381,7 @@ if(Output){
   }, mc.cores = 10)
   
   PredDF1c <- data.frame(PredList1c)
-  FinalHostMatrix$PredVirus1c <- logistic(rowSums(Predictions1c)) # apply(PredDF1b, 1, mean)
+  FinalHostMatrix$PredVirus1c <- apply(PredDF1c, 1, mean)
   FinalHostMatrix$PredVirus1cQ <- cut(FinalHostMatrix$PredVirus1c,
                                       breaks = c(-1:10/10),
                                       labels = c(0:10/10))
@@ -418,8 +418,6 @@ if(Output){
   
   for(x in c("PredVirus1", "PredVirus1b","PredVirus1c")){
     
-    df <- data.frame(as.vector(true[lower.tri(true)]), as.vector(pred[lower.tri(pred)]))
-    
     df <- FinalHostMatrix[,c("VirusBinary",x)]
     
     colnames(df) <- c('observed','predicted')
@@ -427,28 +425,11 @@ if(Output){
     df$observed[df$observed>1] = 1
     
     pred <- prediction(df$predicted, df$observed)
-    performance(pred,"auc")
-    plot(performance(pred, "tpr", "fpr"), main='Receiver operator curve (AUC = 0.782)')
-    abline(0,1,col='red')
     
-    perf.tss <- performance(pred,"sens","spec")
-    tss.list <- (perf.tss@x.values[[1]] + perf.tss@y.values[[1]] - 1)
-    tss.df <- data.frame(alpha=perf.tss@alpha.values[[1]],tss=tss.list)
-    plot(tss.df,type='l')
-    
-    AUCSubList <- list(
-      Threshold = tss.df$alpha[which(tss.df$tss==max(tss.df$tss))],
-      Sensitivity = perf.tss@y.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)], 
-      Specificity = perf.tss@x.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)],
-      Type1 = 1-perf.tss@y.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)],
-      Type2 = 1-perf.tss@x.values[[1]][which(perf.tss@alpha.values[[1]]==thresh)]
-    )
-    
-    AUCList[[x]] <- AUCSubList
-    
+    AUCList[[x]] <- performance(pred,"auc")
+      
   }
-  
-  # Deviance contributions
   
 }
 
+saveRDS(FinalHostMatrix, file = "Iceberg Output Files/KnownPredictedDegree.rds")
