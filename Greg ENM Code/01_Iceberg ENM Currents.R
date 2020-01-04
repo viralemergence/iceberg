@@ -68,7 +68,8 @@ print("Continents!")
 ContinentRaster <- raster("Iceberg Input Files/continents-madagascar.tif") %>%
   resample(blank, method = "ngb")
 
-ContinentWhich <- lapply(1:max(values(ContinentRaster), na.rm = T), function(a) which(values(ContinentRaster)==a))
+ContinentWhich <- 
+  lapply(1:max(values(ContinentRaster), na.rm = T), function(a) which(values(ContinentRaster)==a))
 names(ContinentWhich) <- c("Africa", "Eurasia", "Greenland", "Madagascar", "NAm", "Oceania", "SAm")
 
 # IUCN ranges for continent clipping ####
@@ -95,6 +96,8 @@ Panth1 %>% filter(hOrder == "Chiroptera") %>% pull(Sp) ->
   BatSpecies
 
 ToBuffer <- setdiff(ToBuffer, BatSpecies)
+
+BatSpecies <- intersect(BatSpecies, Species)
 
 # 01_Processing Currents ####
 

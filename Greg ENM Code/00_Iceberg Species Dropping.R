@@ -13,7 +13,7 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 Panth1 %>% filter(hOrder%in%c("Cetacea", "Sirenia")|
                     hFamily%in%c("Phocidae", "Odobenidae", "Otariidae")) %>% pull(Sp) ->
-  MarineSp
+    MarineSp
 
 # Land use ####
 
@@ -74,8 +74,8 @@ RangeBagLista <- mclapply(Files, function(a){
   
   if(length(SubFiles)>0) "Y" else "N"
   
-}, mc.preschedule = F, mc.cores = 45)
-
+  }, mc.preschedule = F, mc.cores = 45)
+    
 NullRangeBagRares <- Species[unlist(RangeBagLista) == "N"]
 
 # Range Bag Species ####
