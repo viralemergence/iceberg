@@ -11,7 +11,14 @@ OldFullPolygons.Rdata
 OldMammalRanges1.Rdata
 RangeOverlap.Rdata
 RangeOverlapB.Rdata
-
 MammalStackOverlap.Rdata
 MammalStackPolygons.Rdata
 MammalStackValues.Rdata
+CentroidList.Rdata
+FullRangeOverlapMercator.Rdata
+FullRangeOverlapMollweide.Rdata
+GridList.Rdata
+HostPolygons.Rdata
+MammalRanges2.Rdata
+VirusPolygons.Rdata
+VirusRangeOverlap.Rdata

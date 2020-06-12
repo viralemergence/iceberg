@@ -1,2 +1,0 @@
-# Iceberg Non-Spatial Import
-
