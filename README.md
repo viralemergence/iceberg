@@ -1,3 +1,5 @@
+![banner](https://github.com/cjcarlson/iceberg/blob/master/Banner.jpeg)
+
 # Iceberg
 
 ## Carlson, Albery, et al.: Climate change will drive novel cross-species viral transmission
@@ -41,18 +43,18 @@ This repo is organised as follows:
 -- `0_Master Iceberg.R`: Loop through the rest of the code.  
 -- `1_Iceberg Spatial.R`: Import the `GretCDFs` and use them to calculate current and future overlap between species' ranges. This makes use of the `PairsWisely` function from the `SpRanger` package, per Albery et al. (2020).  
 -- `2_Iceberg Data Import.R`: Import the accessory phenotypic data used for the GAMMs, including PanTheria and the host-virus association dataset.
--- `3_Iceberg GAMs.R`
--- `4_Iceberg Prediction.R`
--- `5_Iceberg Mapping.R`
--- `6_Iceberg Submaps.R`
--- `6b_Order New Encounters.R`
--- `6c_Range Changes.R`
--- `7_New Encounter GAMs.R`
--- `8_Individual Reps Iceberg Display Outputs.R`
--- `8b_Individual Reps Extended Data Figures.R`
--- `8c_Summary Iceberg Display Outputs.R`
--- `9_Text Numbers.R`
--- `9X_Numbers that Colin needs in main text.R`
+-- `3_Iceberg GAMs.R`  
+-- `4_Iceberg Prediction.R`  
+-- `5_Iceberg Mapping.R`  
+-- `6_Iceberg Submaps.R`  
+-- `6b_Order New Encounters.R`  
+-- `6c_Range Changes.R`  
+-- `7_New Encounter GAMs.R`  
+-- `8_Individual Reps Iceberg Display Outputs.R`  
+-- `8b_Individual Reps Extended Data Figures.R`  
+-- `8c_Summary Iceberg Display Outputs.R`  
+-- `9_Text Numbers.R`  
+-- `9X_Numbers that Colin needs in main text.R`  
 
 
 
