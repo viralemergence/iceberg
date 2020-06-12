@@ -1,4 +1,4 @@
-![banner](https://github.com/cjcarlson/iceberg/blob/master/Banner.jpeg)
+![banner](https://github.com/cjcarlson/iceberg/blob/master/Banner.png)
 
 # Iceberg
 
