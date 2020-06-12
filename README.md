@@ -44,10 +44,10 @@ This repo is organised as follows:
 
 -- `0_Master Iceberg.R`: Loop through the rest of the code.  
 -- `1_Iceberg Spatial.R`: Import the `GretCDFs` and use them to calculate current and future overlap between species' ranges. This makes use of the `PairsWisely` function from the `SpRanger` package, per Albery et al. (2020).  
--- `2_Iceberg Data Import.R`: Import the accessory phenotypic data used for the GAMMs, including PanTheria and the host-virus association dataset. Will make a pairwise viral sharing dataset, where every row is a species pair, and each column is a different pairwise trait (e.g. phylogenetic similarity and geographic overlap).
--- `3_Iceberg GAMs.R`: Run Generalised Additive Mixed Models (GAMMs) exaining how these pairwise traits determine the probability of sharing at least one virus in the Olival et al. (2017) dataset.
+-- `2_Iceberg Data Import.R`: Import the accessory phenotypic data used for the GAMMs, including PanTheria and the host-virus association dataset. Will make a pairwise viral sharing dataset, where every row is a species pair, and each column is a different pairwise trait (e.g. phylogenetic similarity and geographic overlap).  
+-- `3_Iceberg GAMs.R`: Run Generalised Additive Mixed Models (GAMMs) exaining how these pairwise traits determine the probability of sharing at least one virus in the Olival et al. (2017) dataset.  
 -- `4_Iceberg Prediction.R`: Use the GAMM to predict viral sharing probabilities for species in the present day and in all of the future scenarios. The difference between each future and current scenario comprises the overall change in sharing, and therefore the number of new sharing events.  
--- `5_Iceberg Mapping.R`: Map the novel encounters and sharing events, showing how viruses will be shared newly in 50 years' time.
+-- `5_Iceberg Mapping.R`: Map the novel encounters and sharing events, showing how viruses will be shared newly in 50 years' time.  
 -- `6_Iceberg Submaps.R`: Repeat the mapping process, but with subsets of data: bat-primate encounters and known Ebola hosts.  
 -- `6b_Order New Encounters.R`  
 -- `6c_Range Changes.R`: Import the GretCDFs and examine how different climate scenarios alter change in species' range sizes.  
