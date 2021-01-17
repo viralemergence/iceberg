@@ -465,7 +465,18 @@ object.size(CurrentCDFList)/(10^9)
 
 names(CurrentCDFList) <- Species
 
-CurrentCDFList %>% map("BuffersPreClipClim") %>% 
+CurrentCDFList %>% map("IUCNClippedClimate") %>% 
+  map(function(a) a*(AreaValues[-Sea])) %>% bind_cols() %>% as.data.frame() ->
+  ValueDF
+
+print("Calculating overlap!")
+
+RangeAdj <- PairsWisely(Rasterstack = ValueDF, Area = T)
+
+saveRDS(RangeAdj, file = paste0("Iceberg Files/Historical/", 
+                                "IUCNClippedCurrentsRangeAdj.rds"))
+
+CurrentCDFList %>% map("BufferPreClipClim") %>% 
   map(function(a) a*(AreaValues[-Sea])) %>% bind_cols() %>% as.data.frame() ->
   ValueDF
 
@@ -498,8 +509,19 @@ RangeAdj <- PairsWisely(Rasterstack = ValueDF, Area = T)
 saveRDS(RangeAdj, file = paste0("Iceberg Files/Historical/", 
                                 "DispersalIUCNClippedClimateRangeAdj.rds"))
 
+"Iceberg Files/Historical" %>% list.files(pattern = "RangeAdj", full.names = T) %>% 
+  map(readRDS) -> RangeAdjList
+
+names(RangeAdjList) <- 
+  "Iceberg Files/Historical" %>% list.files(pattern = "RangeAdj")
+
+RangeAdjList %>% map(c(unlist, Prev))
+RangeAdjList %>% map(c(unlist, mean))
+
 # 3_Making data frame ####
 # Final Iceberg Code/Rscript "2_Iceberg Data Import.R" ####
+
+Unlist1 <- function(x) unlist(x, recursive = F)
 
 # Viral data import ###
 
