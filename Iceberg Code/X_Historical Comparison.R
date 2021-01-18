@@ -528,14 +528,11 @@ Unlist1 <- function(x) unlist(x, recursive = F)
 library(igraph); library(magrittr); library(dplyr); library(ggplot2); require(RCurl); library(readr);
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(cowplot)
 
-HistoricalRangeAdj <- 
-  
-  readRDS(paste0("Iceberg Files/Historical/", 
-                 "HistoricalRangeAdj.rds"))
-PreClipRangeAdj <- 
-  
-  readRDS(paste0("Iceberg Files/Historical/", 
-                 "PreClipRangeAdj.rds"))
+"Iceberg Files/Historical" %>% list.files(pattern = "RangeAdj", full.names = T) %>% 
+  map(readRDS) -> RangeAdjList
+
+names(RangeAdjList) <- 
+  "Iceberg Files/Historical" %>% list.files(pattern = "RangeAdj")
 
 AssocsBase <- read_csv("https://raw.githubusercontent.com/ecohealthalliance/HP3/master/data/associations.csv") %>% data.frame()
 HostTraits <- read_csv("https://raw.githubusercontent.com/ecohealthalliance/HP3/master/data/hosts.csv") %>% data.frame()
@@ -641,17 +638,22 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
 
-FinalHostNames <- reduce(list(
-  rownames(HistoricalRangeAdj), 
-  rownames(PreClipRangeAdj),
-  # rownames(HostAdj), 
-  colnames(FullSTMatrix)), 
-  intersect)
+FinalHostNames <- 
+  
+  RangeAdjList %>% map(rownames) %>% 
+  append(list(rownames(HostAdj),
+              colnames(FullSTMatrix))) %>% 
+  reduce(intersect)
 
 FHN <- FinalHostNames %>% setdiff(NonEutherianSp); length(FHN)
 
-AllMammals <- intersect(colnames(FullSTMatrix),colnames(HistoricalRangeAdj))
-AllMammals <- AllMammals[order(AllMammals)]
+AllMammals <- 
+  RangeAdjList %>% map(rownames) %>% 
+  append(list(colnames(FullSTMatrix))) %>% 
+  reduce(intersect)
+
+AllMammals %<>% sort
+
 AbsentHosts <- FHN[which(!FHN%in%AllMammals)]
 
 NameReplace <- c(
@@ -711,12 +713,7 @@ tSTMatrix <- tFullSTMatrix
 
 rownames(Hosts) = Hosts$Sp
 
-FinalHostNames <- reduce(list(
-  rownames(HistoricalRangeAdj), 
-  rownames(PreClipRangeAdj),
-  # rownames(HostAdj), 
-  colnames(FullSTMatrix)), 
-  intersect)
+FinalHostNames <- FHN
 
 FinalHostNames %>% setdiff(NonEutherianSp)
 
@@ -726,9 +723,10 @@ FHN <- FinalHostNames; length(FHN)
 #   which(upper.tri(HostAdj[FHN,FHN], diag = T))
 
 HostMatrixdf <- data.frame(#Virus = c(HostAdj[FHN, FHN]),
-  Historical = c(HistoricalRangeAdj[FHN, FHN]),
-  PreClipClim = c(PreClipRangeAdj[FHN, FHN]),
-  #Phylo = c(tFullSTMatrix[FHN, FHN]),
+  Historical = c(RangeAdjList$HistoricalRangeAdj.rds[FHN, FHN]),
+  Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[FHN, FHN]),
+  Phylo = c(tFullSTMatrix[FHN, FHN]),
+  Virus = c(HostAdj[FHN, FHN]),
   Sp = as.character(rep(FHN, each = length(FHN))),
   Sp2 = as.character(rep(FHN, length(FHN)))
 )
@@ -788,27 +786,41 @@ FinalHostMatrix <- FinalHostMatrix %>% filter(!Sp%in%RemoveSp&!Sp2%in%RemoveSp)
 FinalHostMatrix$Sp <- factor(FinalHostMatrix$Sp, levels = sort(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
 FinalHostMatrix$Sp2 <- factor(FinalHostMatrix$Sp2, levels = sort(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
 
-FinalHostMatrix <- FinalHostMatrix %>% slice(order(Sp,Sp2))
+FinalHostMatrix <- FinalHostMatrix %>% arrange(Sp, Sp2)
 
 # Let's try this a second time ####
 
 FHN <- levels(FinalHostMatrix$Sp)
 
-HostMatrixdf <- data.frame(Virus = c(HostAdj[FHN, FHN]),
-                           Space = c(FullRangeAdj[FHN, FHN]),
-                           Phylo = c(tFullSTMatrix[FHN, FHN]),
-                           Sp = as.character(rep(FHN, each = length(FHN))),
-                           Sp2 = as.character(rep(FHN, length(FHN)))
+HostMatrixdf <- data.frame(#Virus = c(HostAdj[FHN, FHN]),
+  Historical = c(RangeAdjList$HistoricalRangeAdj.rds[FHN, FHN]),
+  Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[FHN, FHN]),
+  Phylo = c(tFullSTMatrix[FHN, FHN]),
+  Virus = c(HostAdj[FHN, FHN]),
+  Sp = as.character(rep(FHN, each = length(FHN))),
+  Sp2 = as.character(rep(FHN, length(FHN)))
 )
 
 HostMatrixdf$Sp <- as.character(HostMatrixdf$Sp)
 HostMatrixdf$Sp2 <- as.character(HostMatrixdf$Sp2)
 
-HostMatrixVar <- c("hOrder", "hFamily", "hDom", "hAllZACites", "hDiseaseZACites")
+HostMatrixVar <- c("hOrder", "hFamily", "hDom", "hAllZACites", "hDiseaseZACites"
+                   #"LongMean", "LatMean")
+)
 
 HostMatrixdf[,HostMatrixVar] <- Hosts[HostMatrixdf$Sp, HostMatrixVar]
 HostMatrixdf[,paste0(HostMatrixVar,".Sp2")] <- Hosts[HostMatrixdf$Sp2, HostMatrixVar]
+HostMatrixdf[HostMatrixdf$Sp == "Lynx_lynx",] <- HostMatrixdf[HostMatrixdf$Sp == "Lynx_lynx",] %>% mutate(hAllZACites = 1167, hDiseaseZACites = 115)
 
+HostMatrixdf <- HostMatrixdf %>% mutate(
+  
+  hOrder = Hosts[HostMatrixdf$Sp,"hOrder"],
+  hFamily = Hosts[HostMatrixdf$Sp,"hFamily"],
+  hDom = Hosts[HostMatrixdf$Sp,"hDom"]
+  
+)
+
+HostMatrixdf$Space0 <- ifelse(HostMatrixdf$Space == 0, "No Overlap", "Overlap")
 HostMatrixdf$Cites <- log(HostMatrixdf$hAllZACites + 1)
 HostMatrixdf$TotalCites <- log(HostMatrixdf$hAllZACites + HostMatrixdf$hAllZACites.Sp2 + 1)
 HostMatrixdf$MinCites <- apply(HostMatrixdf[,c("hAllZACites", "hAllZACites.Sp2")],1, function(a) min(a, na.rm = T))
@@ -821,30 +833,42 @@ HostMatrixdf$DomDom <- paste(HostMatrixdf$hDom, HostMatrixdf$hDom.Sp2)
 HostMatrixdf$DomDom <- ifelse(HostMatrixdf$DomDom == "domestic wild", "wild domestic", HostMatrixdf$DomDom) %>%
   factor(levels = c("wild wild", "domestic domestic", "wild domestic"))
 
-UpperHosts <- which(upper.tri(HostAdj[FHN,FHN], diag = T))
+UpperHosts <- # Removing diagonals and 
+  which(upper.tri(HostAdj[FHN,FHN], diag = T))
 
 FinalHostMatrix <- HostMatrixdf[-UpperHosts,]
 
+FinalHostMatrix$Phylo <- FinalHostMatrix$Phylo
 FinalHostMatrix$MinDCites <- log(FinalHostMatrix$MinDCites + 1)
 FinalHostMatrix$VirusBinary <- ifelse(FinalHostMatrix$Virus>0, 1, 0)
 
-FinalHostMatrix$Gz <- as.numeric(FinalHostMatrix$Space==0)
+Remove1 <- FinalHostMatrix %>% group_by(Sp) %>% dplyr::summarise(Mean = mean(VirusBinary)) %>% slice(order(Mean)) %>% filter(Mean==0) %>% dplyr::select(Sp)
+Remove2 <- FinalHostMatrix %>% group_by(Sp2) %>% dplyr::summarise(Mean = mean(VirusBinary)) %>% slice(order(Mean)) %>% filter(Mean==0) %>% dplyr::select(Sp2)
+
+Remove3 <- which(table(c((FinalHostMatrix %>% filter(Phylo < 0.25) %>% dplyr::select(Sp, Sp2))$Sp %>% as.character(),
+                         (FinalHostMatrix %>% filter(Phylo < 0.25) %>% dplyr::select(Sp, Sp2))$Sp2 %>% as.character()))>20) %>% 
+  names
+
+RemoveSp <- intersect(Remove1$Sp, Remove2$Sp2)
+
+FinalHostMatrix <- FinalHostMatrix %>% filter(!Sp%in%RemoveSp&!Sp2%in%RemoveSp)
 
 FinalHostMatrix$Sp <- factor(FinalHostMatrix$Sp, levels = sort(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
 FinalHostMatrix$Sp2 <- factor(FinalHostMatrix$Sp2, levels = sort(union(FinalHostMatrix$Sp,FinalHostMatrix$Sp2)))
 
-FinalHostMatrix <- FinalHostMatrix %>% slice(order(Sp,Sp2))
+FinalHostMatrix <- FinalHostMatrix %>% arrange(Sp, Sp2)
 
-# Simulating on the full network ####
-
-AllMammals <- intersect(rownames(FullSTMatrix), rownames(FullRangeAdj)) %>% setdiff(NonEutherianSp)
-
-AllMammals <- sort(AllMammals)
+AllMammals <- 
+  RangeAdjList %>% map(rownames) %>% 
+  append(list(colnames(FullSTMatrix))) %>% 
+  reduce(intersect) %>% 
+  sort
 
 AllMammalMatrix <- data.frame(
   Sp = as.character(rep(AllMammals,each = length(AllMammals))),
   Sp2 = as.character(rep(AllMammals,length(AllMammals))),
-  Space = c(FullRangeAdj[AllMammals,AllMammals]),
+  Historical = c(RangeAdjList$HistoricalRangeAdj.rds[AllMammals, AllMammals]),
+  Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[AllMammals, AllMammals]),
   Phylo = c(tFullSTMatrix[AllMammals,AllMammals])
 ) %>% 
   mutate(Gz = as.numeric(Space==0)) %>% droplevels
@@ -855,18 +879,401 @@ AllMammaldf <- AllMammalMatrix[-UpperMammals,]
 
 N = nrow(AllMammaldf); N
 
-# Adding on space 2 #### 
+# Running the model ####
 
-CurrentsRangeAdjB <- readRDS("Iceberg Output Files/CurrentsRangeAdjB.rds")
+# Running Frequentist GAMS
 
-CurrentsRangeAdjB %>% reshape2::melt() -> LongBSpace
+# Rscript "3_Iceberg GAMs.R"
 
-LongBSpace %>% filter(paste(Var1,Var2, sep = ".")%in%paste(FinalHostMatrix$Sp,FinalHostMatrix$Sp2, sep = ".")) %>%
-  slice(order(Var1,Var2))->
-  SubLongBSpace
+library(mgcv); library(tidyverse); library(ggregplot); library(MASS); library(cowplot); library(colorspace)
+library(ggregplot); library(parallel); library(igraph); 
+library(Matrix); library(ROCR)
 
-FinalHostMatrix$SpaceA <- FinalHostMatrix$Space
-FinalHostMatrix$SpaceB <- SubLongBSpace$value
+# source("Iceberg Greg GAMM Code/2_Iceberg Data Import.R")
 
+Resps <- c("VirusBinary","RNA","DNA","Vector","NVector")
 
+Covar <- c("s(Phylo, by = ordered(Gz))",
+           "t2(Phylo, Space, by = ordered(!Gz))",
+           "MinCites",
+           "Domestic",
+           "Spp")
+
+BAMList <- DataList <- PPList <- list()
+
+r = 1
+
+Pipeline <- "A"
+
+print(Pipeline)
+
+DataList[[Pipeline]] <- FinalHostMatrix[!NARows(FinalHostMatrix, "VirusBinary"),] %>% droplevels
+
+# DataList[[Pipeline]]$Space <- DataList[[Pipeline]][,paste0("Space",Pipeline)]
+
+DataList[[Pipeline]] %<>% mutate(Gz = as.numeric(Space == 0))
+
+DataList[[Pipeline]]$Sp <- factor(DataList[[Pipeline]]$Sp, levels = sort(union(DataList[[Pipeline]]$Sp,DataList[[Pipeline]]$Sp2)))
+DataList[[Pipeline]]$Sp2 <- factor(DataList[[Pipeline]]$Sp2, levels = sort(union(DataList[[Pipeline]]$Sp,DataList[[Pipeline]]$Sp2)))
+
+DataList[[Pipeline]] <- DataList[[Pipeline]] %>% slice(order(Sp, Sp2))
+
+MZ1 <- model.matrix( ~ Sp - 1, data = DataList[[Pipeline]]) %>% as.matrix
+MZ2 <- model.matrix( ~ Sp2 - 1, data = DataList[[Pipeline]]) %>% as.matrix
+
+SppMatrix = MZ1 + MZ2
+
+DataList[[Pipeline]]$Spp <- SppMatrix
+DataList[[Pipeline]]$Cites <- rowSums(log(DataList[[Pipeline]][,c("hDiseaseZACites","hDiseaseZACites.Sp2")] + 1))
+DataList[[Pipeline]]$MinCites <- apply(log(DataList[[Pipeline]][,c("hDiseaseZACites","hDiseaseZACites.Sp2")] + 1),1,min)
+DataList[[Pipeline]]$Domestic <- ifelse(rowSums(cbind(2- DataList[[Pipeline]]$hDom %>% as.factor %>% as.numeric,
+                                                      2- DataList[[Pipeline]]$hDom.Sp2 %>% as.factor %>% as.numeric))>0,1,0)
+
+PPList[[Pipeline]] <- list(Spp = list(rank = nlevels(DataList[[Pipeline]]$Sp), 
+                                      diag(nlevels(DataList[[Pipeline]]$Sp))))
+
+Formula = as.formula(paste0("VirusBinary", 
+                            " ~ ",
+                            paste(Covar, collapse = " + ")
+))
+
+BAMList[[Pipeline]] <- bam(Formula,
+                           data = DataList[[Pipeline]], 
+                           family = binomial(),
+                           paraPen = PPList[[Pipeline]], select = T
+)
+
+save(DataList, PPList, BAMList, file = paste0("Iceberg Files/Historical/","BAMList.Rdata"))
+
+FitList <- PostList <- DrawList <- list()
+
+Model <- BAMList[[Pipeline]]
+
+print(Pipeline)
+
+# Model Checking ####
+
+SpCoefNames <- names(Model$coef)[substr(names(Model$coef),1,5)=="SppSp"]
+SpCoef <- Model$coef[SpCoefNames]
+
+# Effects ####
+
+SpaceRange <- seq(from = 0,
+                  to = 1,
+                  length = 101) %>% 
+  c(mean(DataList[[Pipeline]]$Space))
+
+PhyloRange <- seq(from = 0,
+                  to = 1,
+                  length = 101)  %>% 
+  c(mean(DataList[[Pipeline]]$Phylo))
+
+FitList[[Pipeline]] <- expand.grid(Space = SpaceRange,
+                                   Phylo = PhyloRange,
+                                   MinCites = mean(DataList[[Pipeline]]$MinCites),
+                                   Domestic = 0
+) %>%
+  mutate(SpaceQuantile = ifelse(Space == last(unique(Space)), "1.5%",
+                                ifelse(Space == 0, "0%",
+                                       ifelse(Space == 0.25, "25%",
+                                              ifelse(Space == 0.5, "50%", NA)))),
+         
+         PhyloQuantile = ifelse(Phylo == last(unique(Phylo)), "0.1",
+                                ifelse(Phylo == 0, "0",
+                                       ifelse(Phylo == 0.25, "0.25",
+                                              ifelse(Phylo == 0.5, "0.5", NA)))),
+         Gz = as.numeric(Space==0))
+
+FitList[[Pipeline]]$Spp <- matrix(0 , nrow = nrow(FitList[[Pipeline]]), ncol = length(SpCoef))
+
+FitPredictions  <- predict.gam(Model, 
+                               newdata = FitList[[Pipeline]], 
+                               se.fit = T)
+
+FitList[[Pipeline]][,c("Fit","Lower", "Upper")] <- logistic(with(FitPredictions, cbind(fit, fit - se.fit, fit + se.fit)))
+
+save(FitList, file = paste0("Iceberg Files/Historical/","FitList.Rdata"))
+
+# Model Output Figure ####
+
+pdf("Iceberg Files/Historical/GAMOutput.pdf", width = 9, height = 8)
+
+plot_grid(FitList[[Pipeline]] %>% 
+            filter(!is.na(SpaceQuantile)) %>%
+            ggplot(aes(Phylo, Fit, colour = SpaceQuantile)) + theme_cowplot() + 
+            geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = SpaceQuantile), alpha = 0.2, colour = NA) +
+            geom_line(aes(group = as.factor(Space))) +
+            labs(y = "Viral sharing probability", x = "Phylogenetic similarity", 
+                 colour = "Geographic overlap", fill = "Geographic overlap") +
+            lims(x = c(0,1), y = c(0,1)) +
+            coord_fixed() +
+            scale_color_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = 5:8)  +
+            scale_fill_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = 5:8)  +
+            theme(legend.position = c(0.1, 0.8), 
+                  legend.title = element_text(size = 10),
+                  legend.background = element_rect(colour = "white")) +
+            geom_rug(data = DataList[[1]], inherit.aes = F, aes(x = Phylo), alpha = 0.01),
+          
+          FitList[[Pipeline]] %>% 
+            filter(!is.na(PhyloQuantile)) %>%
+            ggplot(aes(Space, Fit, colour = PhyloQuantile)) +  theme_cowplot() + 
+            geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = PhyloQuantile), alpha = 0.2, colour = NA) +
+            geom_line(aes(group = as.factor(Phylo))) +
+            labs(y = "Viral sharing probability", x = "Geographic overlap", 
+                 colour = "Phylogenetic similarity", fill = "Phylogenetic similarity") +
+            lims(x = c(0,1), y = c(0,1)) +
+            coord_fixed() +
+            scale_color_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = 5:8)  +
+            scale_fill_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = 5:8)  +
+            theme(legend.position = c(0.1, 0.8), 
+                  legend.title = element_text(size = 10),
+                  legend.background = element_rect(colour = "white")) +
+            geom_rug(data = DataList[[1]], inherit.aes = F, aes(x = Space), alpha = 0.01),
+          
+          FitList[[Pipeline]] %>% 
+            filter(!Phylo == last(unique(Phylo)),
+                   !Space == last(unique(Space))) %>%
+            ggplot(aes(Space, Phylo)) +  theme_cowplot() + 
+            geom_tile(aes(fill = Fit)) + 
+            labs(x = "Geographic overlap", 
+                 y = "Phylogenetic similarity",
+                 fill = "Viral sharing\nprobability") +
+            #ggtitle("Tensor Field") +
+            lims(x = c(0,1), y = c(0,1)) +
+            coord_fixed() +
+            theme(legend.position = "bottom",
+                  legend.title = element_text(size = 10)) +
+            geom_contour(aes(z = Fit), colour = "white", alpha = 0.8) + 
+            metR::geom_text_contour(aes(z = Fit), colour = "white", size = 2.5, hjust = 0.5, vjust = 1.1, check_overlap = T) +
+            scale_fill_continuous_sequential(palette = "ag_GrnYl",
+                                             limits = c(0,1),
+                                             breaks = c(0,0.5,1)),
+          
+          DataList[[Pipeline]] %>%
+            ggplot(aes(Space, Phylo)) +  theme_cowplot() + 
+            labs(x = "Geographic overlap", 
+                 y = "Phylogenetic similarity") +
+            #ggtitle("Data Distribution") +
+            scale_fill_continuous_sequential(palette = "Heat 2", breaks = c(0:2*5)) +
+            lims(x = c(0,1), y = c(0,1)) +
+            coord_fixed() +
+            theme(legend.position = "bottom") +
+            geom_hex(aes(fill = stat(log(count)))),
+          
+          nrow = 2, 
+          rel_heights = c(1,1.23), 
+          labels = "AUTO") 
+
+dev.off()
+
+# 4_Iceberg Prediction ####
+
+# CORES <- 60
+
+library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(SpRanger)
+
+# source("~/Albersnet/Iceberg Code/Iceberg Greg GAMM Code/2_Iceberg Data Import.R")
+
+# PipelineReps <- LETTERS[1:4]
+
+# load(paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/",
+#             "BAMList.Rdata"))
+
+# IcebergAdjList <- readRDS("Iceberg Output Files/IcebergAdjList.rds")
+
+NonEutherians <- c("Diprotodontia",
+                   "Dasyuromorphia",
+                   "Paucituberculata",
+                   "Didelphimorphia",
+                   "Microbiotheria",
+                   "Peramelemorphia", 
+                   "Notoryctemorphia",
+                   "Monotremata")
+
+Panth1 <- read.delim("data/PanTHERIA_1-0_WR05_Aug2008.txt") %>%
+  dplyr::rename(Sp = MSW05_Binomial, hOrder = MSW05_Order, hFamily = MSW05_Family)
+Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
+
+NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
+
+tFullSTMatrix <- 1 - (FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp] - 
+                        min(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp]))/
+  max(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp])
+
+# Making the prediction data frame ####
+
+AllMammals <- reduce(map(RangeAdjList, rownames), 
+                     intersect) %>% 
+  intersect(rownames(FullSTMatrix)) %>%
+  setdiff(NonEutherianSp) %>% 
+  sort()
+
+AllMammalMatrix <- data.frame(
+  Sp = as.character(rep(AllMammals, each = length(AllMammals))),
+  Sp2 = as.character(rep(AllMammals, length(AllMammals))),
+  Phylo = c(tFullSTMatrix[AllMammals, AllMammals])
+) %>%
+  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp" = "Sp")) %>%
+  inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp2" = "Sp")) %>% 
+  droplevels()
+
+# SpaceVars <- paste0(paste("Space", PredReps, sep = "."),
+#                     rep(PipelineReps, each = length(PredReps)))
+# 
+# SharingVars <- paste0(paste("Sharing",PredReps, sep = "."), 
+#                       rep(PipelineReps, each = length(PredReps)))
+# 
+# names(SpaceVars) <- names(SharingVars) <- paste0(PredReps, rep(PipelineReps, each = length(PredReps)))
+
+SpaceVars <- c("Historical", "Current")
+SharingVars <- c("Sharing.Historical", "Sharing.Current")
+
+AllMammalMatrix[,SpaceVars] <-
+  RangeAdjList[c("HistoricalRangeAdj.rds", "PreClipRangeAdjDispersalClipped.rds")] %>% 
+  
+  lapply(function(a){
+    
+    c(as.matrix(a[AllMammals,AllMammals]))
+    
+  }) %>% bind_cols()
+
+UpperMammals <- which(upper.tri(tFullSTMatrix[AllMammals, AllMammals], diag = T))
+
+AllMammaldf <- AllMammalMatrix[-UpperMammals,]
+
+N = nrow(AllMammaldf)
+
+Model <- BAMList[[1]]
+
+SpCoefNames <- names(Model$coef)[substr(names(Model$coef),1,5)=="SppSp"]
+SpCoef <- Model$coef[SpCoefNames]
+
+FakeSpp <- matrix(0 , nrow = N, ncol = length(SpCoef))# %>% as("dgCMatrix")
+
+AllMammaldf$Spp <- FakeSpp; remove(FakeSpp)
+
+AllMammaldf$MinCites <- mean(c(log(FinalHostMatrix$MinCites+1), 
+                               log(FinalHostMatrix$MinCites.Sp2+1)), na.rm = T)
+
+AllMammaldf$Domestic <- 0
+
+Pipeline = "A"
+
+print("Prediction Effects!")
+
+Random = F
+
+PredReps <- c("Historical", "Currents")
+
+# for(Pipeline in PipelineReps){
+
+print(Pipeline)
+
+Model <- BAMList[[1]]
+
+SpCoefNames <- names(Model$coef)[substr(names(Model$coef),1,5)=="SppSp"]
+SpCoef <- Model$coef[SpCoefNames]
+
+x <- 1
+
+for(x in 1:2){
+  
+  print(PredReps[x])
+  
+  AllMammaldf$Space = AllMammaldf[,SpaceVars[x]]
+  AllMammaldf$Gz = as.numeric(AllMammaldf$Space==0)
+  
+  AllPredictions1b <- predict.bam(Model, 
+                                  newdata = AllMammaldf, # %>% select(-Spp),
+                                  type = "terms",
+                                  exclude = "Spp")
+  
+  AllIntercept <- attr(AllPredictions1b, "constant")
+  
+  AllPredictions <- AllPredictions1b %>% as.data.frame
+  
+  AllPredictions[,"Intercept"] <- AllIntercept
+  
+  # if(Random){
+  #   
+  #   AllPredList <- mclapply(1:100, function(a){
+  #     
+  #     AllPredictions[,"Spp"] <- sample(SpCoef, N, replace = T) + 
+  #       sample(SpCoef, N, replace = T)
+  #     
+  #     AllPredSums <- logistic(rowSums(AllPredictions))
+  #     
+  #     return(AllPredSums)
+  #     
+  #   }, mc.cores = CORES)
+  #   
+  #   PredSums <- AllPredList %>% bind_cols %>% rowSums
+  #   
+  #   AllMammaldf[,paste0(SharingVars[paste0(PredReps[x], Pipeline)])] <- PredSums/length(AllPredList)
+  #   
+  # }else{      
+  #   
+  
+  PredSums <- logistic(rowSums(AllPredictions))
+  
+  AllMammaldf[,SharingVars[x]] <- PredSums
+  
+  #   
+}
+
+AllMammaldf <- AllMammaldf %>% dplyr::select(-Spp)
+
+AllMammaldf[, paste0("Delta", "Space"] <-
+  
+  AllMammaldf$Space.Current - AllMammaldf$Space.Historical
+
+AllMammaldf[, paste0("Delta", "Sharing"] <-
+  
+  AllMammaldf$Sharing.Current - AllMammaldf$Sharing.Historical
+
+# Making new encounters ####
+
+NewEncountersList <- 
+  
+  lapply(PipelineReps, function(b){
+    
+    l1 <- lapply(PredReps[2:length(PredReps)], function(a){
+      
+      AllMammaldf[AllMammaldf[,paste0("Space.Currents",b)]==0&
+                    AllMammaldf[,paste0("Space.", a, b)]>0,]
+      
+    })
+    
+    names(l1) <- PredReps[2:length(PredReps)]
+    
+    return(l1)
+    
+  })
+
+names(NewEncountersList) <- PipelineReps
+
+# Making old encounters ####
+
+OldEncountersList <- 
+  
+  lapply(PipelineReps, function(b){
+    
+    l1 <- lapply(PredReps[2:length(PredReps)], function(a){
+      
+      AllMammaldf[AllMammaldf[,paste0("Space.Currents", b)]>0&
+                    AllMammaldf[,paste0("Space.", a, b)]==0,]
+      
+    })
+    
+    names(l1) <- PredReps[2:length(PredReps)]
+    
+    return(l1)
+    
+  })
+
+names(OldEncountersList) <- PipelineReps
+
+saveRDS(AllMammaldf, file = "Iceberg Output Files/AllMammaldf.rds")
+saveRDS(NewEncountersList, file = paste0("Iceberg Output Files/NewEncounters.rds"))
+saveRDS(OldEncountersList, file = paste0("Iceberg Output Files/OldEncounters.rds"))
 
