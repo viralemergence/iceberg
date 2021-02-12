@@ -83,7 +83,13 @@ This repo is organised as follows:
 
 ### The summary folder includes summarised versions of all of these files.
 
+### There are some anciliary scripts that will do related but distinct sub-analyses:  
+-- Historical analysis  
+-- Range changes  
+-- Checking thresholding of the SDM's
+-- And more!  
 
-For questions about the pipeline, email Greg at gfalbery@gmail.com and I'll get back to you!
+For questions about the pipeline, email Greg at gfalbery@gmail.com and I'll get back to you! 
+For questions about the SDM's themselves, email Colin Carlson or Cory Merow.
 
 
