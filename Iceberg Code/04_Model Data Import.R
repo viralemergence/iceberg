@@ -8,7 +8,7 @@ library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(c
 # FullRangeAdj <- IcebergAdjList$Currents
 FullRangeAdj <- CurrentsRangeAdjA <-  
   
-  readRDS(paste0("Iceberg Output Files/", "CurrentsRangeAdj", "A",".rds"))
+  readRDS(paste0("Iceberg Files/CHELSA/Output Files/", "CurrentsRangeAdj",".rds"))
 
 AssocsBase <- read_csv("https://raw.githubusercontent.com/ecohealthalliance/HP3/master/data/associations.csv") %>% data.frame()
 HostTraits <- read_csv("https://raw.githubusercontent.com/ecohealthalliance/HP3/master/data/hosts.csv") %>% data.frame()
@@ -80,16 +80,16 @@ theme_set(theme_cowplot())
 
 # Adding in all mammal supertree ####
 
-if(!file.exists("Iceberg Input Files/FullSTMatrix.csv")){
+if(!file.exists("Iceberg Files/CHELSA/FullSTMatrix.csv")){
   
   library(geiger);library(ape);library(picante);library(dplyr)
   
   STFull <- read.nexus("data/ele_1307_sm_sa1.tre")[[1]]
   FullSTMatrix <- as.data.frame(cophenetic(STFull)) %>% as.matrix
   
-  write.csv(FullSTMatrix, file = "Iceberg Input Files/FullSTMatrix.csv", row.names = F)
+  write.csv(FullSTMatrix, file = "Iceberg Files/CHELSA/Iceberg Input Files/FullSTMatrix.csv", row.names = F)
   
-} else{FullSTMatrix <- as.matrix(read.csv("Iceberg Input Files/FullSTMatrix.csv", header = T)) }
+} else{FullSTMatrix <- as.matrix(read.csv("Iceberg Files/CHELSA/FullSTMatrix.csv", header = T)) }
 
 # Making Viral Associations and Polygons ####
 
@@ -110,6 +110,7 @@ NonEutherians <- c("Diprotodontia",
 
 Panth1 <- read.delim("data/PanTHERIA_1-0_WR05_Aug2008.txt") %>%
   dplyr::rename(Sp = MSW05_Binomial, hOrder = MSW05_Order)
+
 Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
@@ -154,7 +155,8 @@ NameReplace <- c(
 
 names(NameReplace) <- AbsentHosts
 
-rownames(FullSTMatrix) <- colnames(FullSTMatrix) <- sapply(colnames(FullSTMatrix), function(a) ifelse(a%in%AbsentHosts, NameReplace[a], a))
+rownames(FullSTMatrix) <- colnames(FullSTMatrix) <- 
+  sapply(colnames(FullSTMatrix), function(a) ifelse(a%in%AbsentHosts, NameReplace[a], a))
 
 NonEutherians <- c("Diprotodontia",
                    "Dasyuromorphia",
@@ -173,7 +175,7 @@ NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
 
 tFullSTMatrix <- 1 - 
   (FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp] - 
-                        min(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp]))/
+     min(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp]))/
   max(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp])
 
 tSTMatrix <- tFullSTMatrix
@@ -184,10 +186,10 @@ rownames(Hosts) = Hosts$Sp
 
 FinalHostNames <- reduce(list(
   rownames(FullRangeAdj), 
-  colnames(FullSTMatrix),
+  colnames(tFullSTMatrix),
   rownames(HostAdj)), intersect)
 
-FinalHostNames %>% setdiff(NonEutherianSp)
+FinalHostNames %<>% setdiff(NonEutherianSp)
 
 FHN <- FinalHostNames; length(FHN)
 
@@ -323,11 +325,28 @@ N = nrow(AllMammaldf); N
 
 # Adding on space 2 #### 
 
-CurrentsRangeAdjB <- readRDS("Iceberg Output Files/CurrentsRangeAdjB.rds")
+CurrentsRangeAdjB <- 
+  readRDS("Iceberg Files/CHELSA/Output Files/CurrentsLandUseRangeAdj.rds")
+
+CurrentSpecies <- rownames(CurrentsRangeAdjA)
+
+NewAdj <- CurrentsRangeAdjB
+InsertSpecies <- setdiff(CurrentSpecies, rownames(NewAdj))
+
+if(length(InsertSpecies)>0){
+  
+  NewAdj <- NewAdj %>% data.frame()
+  NewAdj[InsertSpecies,] <- 0; NewAdj[,InsertSpecies] <- 0
+  NewAdj <- NewAdj %>% as.matrix
+  
+  CurrentsRangeAdjB <- NewAdj[CurrentSpecies, CurrentSpecies]
+}
 
 CurrentsRangeAdjB %>% reshape2::melt() -> LongBSpace
 
-LongBSpace %>% filter(paste(Var1,Var2, sep = ".")%in%paste(FinalHostMatrix$Sp,FinalHostMatrix$Sp2, sep = ".")) %>%
+LongBSpace %>% 
+  filter(paste(Var1,Var2, sep = ".") %in% 
+           paste(FinalHostMatrix$Sp,FinalHostMatrix$Sp2, sep = ".")) %>%
   slice(order(Var1,Var2))->
   SubLongBSpace
 

@@ -46,9 +46,22 @@ AreaValues <- raster::values(AreaRaster)
 CurrentFiles <- "Iceberg Input Files/GretCDF/Currents" %>% list.files(full.names = T)
 
 names(CurrentFiles) <- 
-  Species <-
   "Iceberg Input Files/GretCDF/Currents" %>% list.files %>% 
   str_remove(".rds$")
+
+Species <-
+  "FinalRasters" %>% dir_ls() %>% 
+  map(function(a){
+    
+    a %>% 
+      dir_ls() %>% 
+      str_split("/") %>% 
+      map_chr(last) %>% 
+      str_remove(".tif$")
+    
+  }) %>% reduce(intersect)
+
+CurrentFiles <- CurrentFiles[Species]
 
 # Setting raster standards ####
 
@@ -117,9 +130,9 @@ for(FocalGCM in GCMs){
   Processed <- paste0("Iceberg Input Files/GretCDF/", FocalGCM) %>% 
     list.files %>% str_remove(".rds$")
   
-  # (ToProcess <- setdiff(Species, Processed)) %>% length
+  (ToProcess <- setdiff(Species, Processed)) %>% length
   
-  ToProcess <- Species
+  # ToProcess <- Species
   
   Files <- paste0("Iceberg Input Files/GretCDF/", "Currents", "/", ToProcess, ".tif")
   names(Files) <- ToProcess
@@ -225,14 +238,14 @@ for(FocalGCM in GCMs){
       
     }
     
-    GretCDF[GretCDF$Continent == 0, paste0("Climate.", PredReps)] <- 0
+    GretCDF[GretCDF$Continent == 0, paste0("Climate.", PredReps2)] <- 0
     
     GretCDF[,paste0("ClimateLandUse.", PredReps2)] <-
-
+      
       lapply(PredReps2, function(a){
-
+        
         as.numeric(rowSums(GretCDF[,paste0(c("Climate.", "LandUse."),a)])>1)
-
+        
       }) %>% bind_cols
     
     PredReps2 %>% lapply(function(a){
@@ -243,15 +256,15 @@ for(FocalGCM in GCMs){
                              c(paste0(FocalYear, "Climate"),
                                paste0(FocalYear, "ClimateLandUse"))), 
                       function(b){
-
-                                 as.numeric(rowSums(GretCDF[, c(b,
-                                                                paste0(substr(b, 9, # THIS NUMBER NEEDS TO CHANGE
-                                                                              nchar(b)),
-                                                                       ".",
-                                                                       a))])>1)
-
-                               })
-
+                        
+                        as.numeric(rowSums(GretCDF[, c(b,
+                                                       paste0(substr(b, 9, # THIS NUMBER NEEDS TO CHANGE
+                                                                     nchar(b)),
+                                                              ".",
+                                                              a))])>1)
+                        
+                      })
+      
       names(List1) <- paste0(c("BufferClimate", "BufferClimateLandUse"),
                              ".",
                              a)
@@ -272,6 +285,7 @@ for(FocalGCM in GCMs){
     
     GretCDF %>% 
       dplyr::select(setdiff(colnames(GretCDF), colnames(CurrentsGretCDF))) %>%
+      dplyr::select(-matches("^LandUse")) %>% 
       as.matrix %>% as("dgCMatrix") %>% 
       saveRDS(file = paste0("Iceberg Input Files/GretCDF/", FocalGCM, "/", Sp, ".rds"))
     

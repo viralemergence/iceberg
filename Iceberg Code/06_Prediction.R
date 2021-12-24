@@ -7,14 +7,27 @@ CORES <- 60
 
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(SpRanger)
 
-source("~/Albersnet/Iceberg Code/Iceberg Greg GAMM Code/2_Iceberg Data Import.R")
+source("~/Albersnet/Iceberg Code/04_Model Data Import.R")
 
-PipelineReps <- LETTERS[1:4]
+# PipelineReps <- LETTERS[1:4]
 
-load(paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/",
+load(paste0("~/Albersnet/Iceberg Files/Output Files/",
             "BAMList.Rdata"))
 
-IcebergAdjList <- readRDS("Iceberg Output Files/IcebergAdjList.rds")
+IcebergAdjList <- #readRDS("Iceberg Output Files/IcebergAdjList.rds")
+  list(readRDS("Output Files/CurrentsLandUseRangeAdj.rds")
+       readRDS("Output Files/CurrentsLandUseRangeAdj.rds")) %>% 
+  append(
+    
+    "Output Files/Ranges" %>% dir_ls() %>% map(readRDS)
+    
+  )
+
+names(IcebergAdjList) <- 
+  c("CLUCurrents", "CCurrents") %>% 
+  c("Output Files/Ranges" %>% list.files %>% 
+      str_remove(".rds$") %>% 
+      str_remove("RangeAdj"))
 
 NonEutherians <- c("Diprotodontia",
                    "Dasyuromorphia",
@@ -27,6 +40,7 @@ NonEutherians <- c("Diprotodontia",
 
 Panth1 <- read.delim("data/PanTHERIA_1-0_WR05_Aug2008.txt") %>%
   dplyr::rename(Sp = MSW05_Binomial, hOrder = MSW05_Order, hFamily = MSW05_Family)
+
 Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
@@ -45,8 +59,10 @@ if(CoryClimateReps[CR] == "gf"){
 
 # Making the prediction data frame ####
 
-AllMammals <- reduce(lapply(IcebergAdjList$A, rownames), 
-                     intersect) %>% intersect(rownames(FullSTMatrix)) %>%
+AllMammals <- #reduce(lapply(IcebergAdjList$A, rownames), 
+                     # intersect) %>% 
+  IcebergAdjList %>% map(rownames) %>% reduce(intersect) %>% 
+  intersect(rownames(FullSTMatrix)) %>%
   setdiff(NonEutherianSp) %>% 
   sort()
 
@@ -58,13 +74,12 @@ AllMammalMatrix <- data.frame(
   inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp" = "Sp")) %>%
   inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp2" = "Sp")) %>% droplevels()
 
-SpaceVars <- paste0(paste("Space", PredReps, sep = "."),
-                    rep(PipelineReps, each = length(PredReps)))
+SpaceVars <- paste0("Space.", names(IcebergAdjList))
 
-SharingVars <- paste0(paste("Sharing",PredReps, sep = "."), 
-                      rep(PipelineReps, each = length(PredReps)))
-
-names(SpaceVars) <- names(SharingVars) <- paste0(PredReps, rep(PipelineReps, each = length(PredReps)))
+SharingVars <- paste0("Sharing.", names(IcebergAdjList))
+  
+# names(SpaceVars) <- names(SharingVars) <- 
+#   paste0(PredReps, rep(PipelineReps, each = length(PredReps)))
 
 AllMammalMatrix[,SpaceVars] <-
   IcebergAdjList %>% lapply(function(a){

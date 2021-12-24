@@ -1,5 +1,4 @@
 
-
 # X_Checking CHELSA ####
 
 library(tidyverse)
@@ -9,14 +8,13 @@ FocalSp <- "Catopuma_temminckii"
 
 Currents <- readRDS(paste0("Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/Currents/", FocalSp, ".rds"))
 
-Futures <- readRDS(paste0("Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/Futures/", FocalSp, ".rds"))
+Futures <- readRDS(paste0("Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/gf/", FocalSp, ".rds"))
 
 FullDF <- 
   Currents %>% as.matrix %>% as.data.frame %>% 
   bind_cols(
     
-    Futures %>% as.matrix %>% as.data.frame %>% 
-      dplyr::select(-c(X, Y, Continent), -matches("Buffer..Climate"))
+    Futures %>% as.matrix %>% as.data.frame
     
   )
 

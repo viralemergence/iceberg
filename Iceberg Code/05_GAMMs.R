@@ -8,9 +8,9 @@ library(mgcv); library(tidyverse); library(ggregplot); library(MASS); library(co
 library(ggregplot); library(parallel); library(igraph); 
 library(Matrix); library(ROCR)
 
-# source("Iceberg Greg GAMM Code/2_Iceberg Data Import.R")
+source("Iceberg Code/04_Model Data Import.R")
 
-PipelineReps = LETTERS[1:4]
+# PipelineReps = LETTERS[1:4]
 
 Resps <- c("VirusBinary","RNA","DNA","Vector","NVector")
 
@@ -24,7 +24,7 @@ BAMList <- DataList <- PPList <- list()
 
 r = 1
 
-for(Pipeline in c("A", "B")){
+for(Pipeline in c("A", "B")[2]){
   
   print(Pipeline)
   
@@ -64,7 +64,7 @@ for(Pipeline in c("A", "B")){
   
 }
 
-save(DataList, PPList, BAMList, file = paste0("Iceberg Output Files/","BAMList.Rdata"))
+save(DataList, PPList, BAMList, file = paste0("Iceberg Files/CHELSA/Output Files/","BAMList.Rdata"))
 
 FitList <- PostList <- DrawList <- list()
 

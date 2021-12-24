@@ -169,6 +169,8 @@ Species <- FullFiles %>% str_split("/") %>% map_chr(last) %>% str_remove(".tif$"
 
 names(FullFiles) <- Species
 
+Species %<>% setdiff(MarineSp)
+
 Files <- FullFiles[Species]
 
 # Setting raster standards ####
