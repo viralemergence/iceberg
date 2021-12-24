@@ -162,36 +162,6 @@ RasterRows <-
       length.out = nrow(blank)) %>%
   as.character()
 
-GregRast <- function(DF, Value, Projection = NULL){
-  
-  DF[,c("X", "Y", Value)] %>% 
-    pivot_wider(names_from = "X", 
-                values_from = Value) %>% 
-    arrange(desc(Y)) %>% 
-    as.data.frame -> 
-    
-    Matrix
-  
-  rownames(Matrix) <- Matrix$Y %>% as.character()
-  
-  Matrix[setdiff(RasterRows, rownames(Matrix)),] <- NA
-  Matrix[,setdiff(RasterCols, colnames(Matrix))] <- NA
-  
-  Matrix %>% dplyr::select(-Y) %>% as.matrix -> Matrix2
-  
-  Matrix2[RasterRows, RasterCols] -> Matrix3
-  
-  Matrix3 %>% raster -> R1
-  
-  extent(R1) <- c(min(DF$X, na.rm = T), max(DF$X, na.rm = T),
-                  min(DF$Y, na.rm = T), max(DF$Y, na.rm = T))
-  
-  R1 %>% resample(blank) -> R1
-  
-  return(R1)
-  
-}
-
 GregRast <- function(DF, x, Projection = NULL) {
   
   r <- UniversalBlank
@@ -310,11 +280,14 @@ ModelListList %>% Unlist1 %>% Unlist1 %>% Unlist1 %>%
       rbind(data.frame(Mean = 0, SE = 0, Var = "Cropland"), .) %>%
       filter(!Var == "(Intercept)")
     
-  }, .id = "ClimateRep") -> BAMFixed
+  }, .id = "ClimateRep") -> 
+  
+  BAMFixed
 
 FitListList %>% Unlist1 %>% Unlist1 %>% Unlist1 %>% bind_rows(.id = "ClimateRep") %>% 
   group_by(Rep, ClimateRep) %>% summarise(Rich = last(Richness)) %>% 
   pull(Rich) %>% unique() -> Richnesses
+
 
 FitListList %>% Unlist1 %>% Unlist1 %>%
   map("NoBat", id = "ClimateRep") %>% 
@@ -330,38 +303,6 @@ FitListList %>% Unlist1 %>% Unlist1 %>%
          Richness %in% Richnesses) %>% 
   mutate(Bats = "Bat encounters") -> df2
 
-named <- c(A.Futures1 = 'RCP 2.6 (CLD)',
-           A.Futures4 = 'RCP 8.5 (CLD)',
-           C.Futures1 = 'RCP 2.6 (CL)',
-           C.Futures4 = 'RCP 8.5 (CL)') 
-
-named <- c(Futures1A = 'RCP 2.6 (CLD)',
-           Futures4A = 'RCP 8.5 (CLD)',
-           Futures1C = 'RCP 2.6 (CL)',
-           Futures4C = 'RCP 8.5 (CL)') 
-
-rbind(df1, df2) %>% 
-  mutate(ClimateRep = substr(Pipeline, 1, 8)) %>% 
-  mutate(Scenario = recode(Rep, !!!named)) %>% 
-  ggplot(aes(Elevation, Fit, 
-             #fill = Scenario, 
-             colour = Scenario,
-             group = paste0(Scenario, ClimateRep))) + 
-  facet_wrap(~ Bats) + 
-  geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + 
-  geom_line(alpha = 0.4) + guides(alpha = F) +
-  labs(y = "Predicted Encounters",
-       x = "Elevation",
-       fill = 'Scenario', 
-       colour = 'Scenario') +
-  theme_cowplot()  +  
-  scale_fill_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = c(3,5,7,8)) + 
-  scale_colour_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = c(3,5,7,8)) + 
-  #scale_y_log10(labels = scales::scientific) + #xlim(0,6100) + 
-  scale_y_continuous(breaks = c((-1):6), labels = c(10^((-1):6))) +
-  scale_x_continuous(breaks = c((-1):6), labels = c(10^((-1):6))) +
-  theme(strip.background = element_blank()) -> g1; g1
-
 FitListList %>% Unlist1 %>% Unlist1 %>%
   map('NoBat') %>% bind_rows(.id = "Pipeline") %>%
   filter(HabitatType == "Cropland", Elevation == last(unique(Elevation))) %>% 
@@ -373,16 +314,72 @@ FitListList %>% Unlist1 %>% Unlist1 %>%
          Elevation == last(unique(Elevation))) %>% 
   mutate(Bats = "Bat encounters") -> df4
 
-rbind(df3, df4) %>% 
+# Averaging ####
+
+df1 %>% group_by(Elevation, Rep) %>% summarise_at("Fit", mean) -> MeanDF1
+df2 %>% group_by(Elevation, Rep) %>% summarise_at("Fit", mean) -> MeanDF2
+df3 %>% group_by(Richness, Rep) %>% summarise_at("Fit", mean) -> MeanDF3
+df4 %>% group_by(Richness, Rep) %>% summarise_at("Fit", mean) -> MeanDF4
+
+bind_rows(df1, df2, 
+          MeanDF1 %>% mutate(Bats = "Non-bats") %>% mutate(mean = "Y"), 
+          MeanDF2 %>% mutate(Bats = "Bat encounters") %>% mutate(mean = "Y")) %>% 
   mutate(ClimateRep = substr(Pipeline, 1, 8)) %>% 
-  mutate(Scenario = recode(Rep, !!!named)) %>% 
+  mutate(Scenario = recode(Rep, !!!named)) -> 
+  
+  ElevationSlopeDF
+
+bind_rows(df3, df4, 
+          MeanDF3 %>% mutate(Bats = "Non-bats") %>% mutate(mean = "Y"), 
+          MeanDF4 %>% mutate(Bats = "Bat encounters") %>% mutate(mean = "Y")) %>% 
+  mutate(ClimateRep = substr(Pipeline, 1, 8)) %>% 
+  mutate(Scenario = recode(Rep, !!!named)) -> 
+  
+  RichnessSlopeDF
+
+# Plotting ####
+
+named <- c(A.Futures1 = 'RCP 2.6 (CLD)',
+           A.Futures4 = 'RCP 8.5 (CLD)',
+           C.Futures1 = 'RCP 2.6 (CL)',
+           C.Futures4 = 'RCP 8.5 (CL)') 
+
+named <- c(Futures1A = 'RCP 2.6 (CLD)',
+           Futures4A = 'RCP 8.5 (CLD)',
+           Futures1C = 'RCP 2.6 (CL)',
+           Futures4C = 'RCP 8.5 (CL)') 
+
+ElevationSlopeDF %>% 
+  ggplot(aes(Elevation, Fit, 
+             #fill = Scenario, 
+             colour = Scenario,
+             group = paste0(Scenario, ClimateRep))) + 
+  facet_wrap(~ Bats) + 
+  # geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + 
+  #geom_line(alpha = 0.05) + 
+  guides(alpha = F) +
+  labs(y = "Predicted Encounters",
+       x = "Elevation",
+       fill = 'Scenario', 
+       colour = 'Scenario') +
+  theme_cowplot()  +  
+  scale_fill_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = c(3,5,7,8)) + 
+  scale_colour_discrete_sequential(palette = AlberPalettes[[1]], nmax = 8, order = c(3,5,7,8)) + 
+  #scale_y_log10(labels = scales::scientific) + #xlim(0,6100) + 
+  scale_y_continuous(breaks = c((-1):6), labels = c(10^((-1):6))) +
+  scale_x_continuous(breaks = c((-1):6), labels = c(10^((-1):6))) +
+  geom_path(data = ElevationSlopeDF %>% filter(mean == "Y")) +
+  theme(axis.title.x = element_text(vjust = -1)) +
+  theme(strip.background = element_blank()) -> g1; g1
+
+RichnessSlopeDF %>% 
   ggplot(aes(Richness, Fit, 
              #fill = Scenario, 
              colour = Scenario,
              group = paste0(Scenario, ClimateRep))) + 
   facet_wrap(~ Bats) +
-  geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + 
-  geom_line(alpha = 0.4) +
+  #geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.3, colour = NA) + 
+  #geom_line(alpha = 0.05) + guides(alpha = F) +
   labs(y = "Predicted Encounters",
        x = "Richness",
        fill = NULL, 
@@ -393,6 +390,7 @@ rbind(df3, df4) %>%
   scale_colour_discrete_sequential(palette = AlberPalettes[[2]], nmax = 8, order = c(3,5,7,8)) + 
   scale_y_continuous(breaks = c(seq(-1, 8, by = 2)), labels = c(10^(seq(-1, 8, by = 2)))) +
   scale_x_continuous(breaks = c(seq(-1, 8, by = 1)), labels = c(10^(seq(-1, 8, by = 1)))) +
+  geom_path(data = RichnessSlopeDF %>% filter(mean == "Y")) +
   theme(strip.background = element_blank(),
         strip.text.x = element_blank()) -> g2; g2
 
@@ -416,7 +414,8 @@ BAMFixed %>%
   mutate(Model = paste0(PredRep, Pipeline)) %>% 
   mutate(Scenario = recode(Model, !!!named)) %>% 
   mutate(Var = recode(Var, !!!reclass)) %>%
-  ggplot(aes(Var, Mean, colour = Scenario, group = paste0(Scenario, ClimateRep))) + theme_classic() + 
+  group_by(Scenario, Var, Bats) %>% summarise_all(mean) %>% 
+  ggplot(aes(Var, Mean, colour = Scenario, group = Scenario)) + theme_classic() + 
   facet_wrap(. ~ Bats) + 
   geom_hline(yintercept = 0, alpha = 0.7, lty = 2) +
   geom_point(position = position_dodge(w = 0.5)) + 
@@ -438,6 +437,8 @@ BAMFixed %>%
   lims(x = rev(c("Crop", "Settled", "Range", "Forest", "Other"))) + 
   coord_flip()  -> g3; g3
 
+# Plotting ####
+
 TextSize = 14
 
 TextTheme <- theme(axis.title.x = element_text(size = TextSize),
@@ -447,10 +448,10 @@ TextTheme <- theme(axis.title.x = element_text(size = TextSize),
 g1 + TextTheme +
   g2 + TextTheme +
   g3 + TextTheme +
-  plot_layout(heights = c(1.15,1,1)) +
+  plot_layout(heights = c(1, 1, 1)) +
   ggsave(filename = "Iceberg Figures/Figure2CDEFG.jpeg", 
          units = "mm", height = 220, width = 180,
-         dpi = 600)
+         dpi = 300)
 
 # Adding bat and nonbat encounters ####
 

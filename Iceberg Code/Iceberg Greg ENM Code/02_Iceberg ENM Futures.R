@@ -10,7 +10,7 @@ library(tidyverse); library(raster); library(parallel); library(sf); library(Mat
 paste0("~/Albersnet/Iceberg Files/", 
        "Climate1/Iceberg Input Files/GretCDF/Currents") %>% 
   list.files() %>% 
-  str_remove(".rds$") ->
+  str_remove(".rds$") %>% sort ->
   Species
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
@@ -70,11 +70,15 @@ paste0("~/Albersnet/Iceberg Files/", "Climate1/Iceberg Input Files/MaxEnt/01_Raw
   append(paste0("~/Albersnet/Iceberg Files/", "Climate1/Iceberg Input Files/RangeBags/01_Raw/Currents") %>% list.files(full.names = T)) ->
   FullFiles
 
+# NFiles <- FullFiles %>% map(~.x %>% list.files %>% length)
+
 paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
-  list.files() %>% str_remove(".rds$") %>% str_split("__") %>% map_chr(2) %>%
+  list.files() %>% #str_remove(".rds$") %>% str_split("__") %>% map_chr(2) %>%
   append(paste0("Iceberg Input Files/","RangeBags","/01_Raw/Currents") %>% 
-           list.files() %>% str_remove(".rds$") %>% str_split("__") %>% map_chr(2)) ->
+           list.files()) ->
   names(FullFiles)
+
+FullFiles <- FullFiles[!duplicated(names(FullFiles))]
 
 Files <- FullFiles[Species]
 

@@ -13,7 +13,7 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 Panth1 %>% filter(hOrder%in%c("Cetacea", "Sirenia")|
                     hFamily%in%c("Phocidae", "Odobenidae", "Otariidae")) %>% pull(Sp) ->
-    MarineSp
+  MarineSp
 
 # Land use ####
 
@@ -74,13 +74,25 @@ NullRangeBagRares <- c("")
 
 Root <- paste0("Iceberg Input Files/RangeBags/01_Raw/Currents")
 Files <- list.files(Root)
-RangeBagSp <- Files %>% str_remove(".tif$") %>% str_split("__") %>% map_chr(2)
+RangeBagSp <- Files %>% str_remove(".tif$")# %>% str_split("__") %>% map_chr(2)
 
 # MaxEnt Species ####
 
 Root <- paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents")
 Files <- list.files(Root)
-MaxEntSp <- Files %>% str_remove(".tif$") %>% str_split("__") %>% map_chr(2)
+MaxEntSp <- Files# %>% str_remove(".tif$") %>% str_split("__") %>% map_chr(2)
+
+# Removing null maxents 
+
+NFiles <- Root %>% list.files(full.names = T) %>% map_dbl(~.x %>% list.files %>% length)
+
+if(any(NFiles == 0)){
+  
+  MaxEntSp <- MaxEntSp %>% setdiff(Files[NFiles == 0])
+  
+  Root %>% paste0("/", Files[NFiles == 0]) %>% file.remove()
+  
+}
 
 # Dispersals ####
 

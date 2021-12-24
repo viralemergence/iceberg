@@ -575,4 +575,10 @@ if(0){
   
 }
 
-
+ClimateReps %>% lapply(function(.x){
+  
+  Folder <- glue::glue("~/Albersnet/Iceberg Files/{.x}/Iceberg Extended Data")
+  
+  dir_copy(Folder, glue::glue("~/Albersnet/Iceberg Supplement/{.x}"))
+  
+})

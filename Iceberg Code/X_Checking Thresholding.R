@@ -314,13 +314,15 @@ names(GretCDFList) <- Species
 
 TPVars <- colnames(GretCDFList[[1]])
 
-i <- 1
+i <- 7
 
 for(i in i:length(TPVars)){
   
   print(TPVars[i])
   
-  ValueList <- GretCDFList %>% map(TPVars[i]) %>% 
+  ValueList <- GretCDFList %>% 
+    map(TPVars[i]) %>% 
+    map(~as.numeric(.x > 1)) %>% 
     map(function(a) a*(AreaValues[-Sea]))
   
   IsNull <- ValueList %>% map_lgl(~length(.x) == 0) %>% #map_lgl(is.null) %>% 
@@ -377,9 +379,41 @@ Grimport <- function(Dir, Str = "", Function = NULL){
 RangeAdjList %>% map(rownames) %>% reduce(intersect) -> 
   IncludeSpecies
 
-RangeAdjList[[1]][IncludeSpecies, IncludeSpecies] %>% lower.tri(diag = F) -> Extract
+RangeAdjList[[1]][IncludeSpecies, IncludeSpecies] %>% lower.tri(diag = F) %>% 
+  unlist %>% which() -> Extract
 
 RangeAdjList %>% 
   map(~.x[IncludeSpecies, IncludeSpecies] %>% reshape2::melt() %>% slice(Extract)) %>% 
-  reduce(~full.join(.x, .y, by = c("Var1", "Var2")))
+  bind_cols() %>% dplyr::select(1, 2, contains("value")) -> 
+  
+  DF
 
+names(DF) <- c("Sp1", "Sp2", RangeAdjList %>% names %>% str_remove(".rds$"))
+
+# DF %>% object.size() %>% divide_by(10^9)
+
+TPVars <- DF %>% dplyr::select(-c(Sp1, Sp2)) %>% colnames
+
+DF %>% summarise_at(TPVars, mean) %>% 
+  bind_rows(DF %>% summarise_at(TPVars, Prev)) %>% 
+  mutate_all(~round(.x, 3)) %>% 
+  mutate(Variable = c("Mean", "Prev")) %>% 
+  dplyr::select(Variable, all_of(TPVars))
+
+DF %>% gather("Rep", "Value", TPVars) -> LongDF
+
+LongDF %<>% mutate(SPPair = paste0(Sp1, "_", Sp2))
+
+library(lme4)
+
+LM1 <- lmer(data = LongDF, Value ~ (1|Rep) + (1|SPPair))
+
+LMSummary <- LM1 %>% summary
+
+LMSummary %>% str
+
+LMSummary %>% saveRDS("")
+
+LMSummary$varcor %>% data.frame %>% 
+  mutate(Repeatability = (vcov/sum(vcov)) %>% round(3)) %>% 
+  dplyr::select(Var = grp, Repeatability)

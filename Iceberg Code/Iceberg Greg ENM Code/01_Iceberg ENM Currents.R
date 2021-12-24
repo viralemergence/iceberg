@@ -1,7 +1,11 @@
 
 # Iceberg pre-GAM spatial processing ####
 
-# Rscript "01_Iceberg ENM Currents.R"
+# Rscript "Iceberg Code/Iceberg Greg ENM Code/01_Iceberg ENM Currents.R"
+
+# setwd(here::here())
+
+CORES <- 30
 
 library(tidyverse); library(raster); library(parallel); library(sf); library(Matrix); library(magrittr); library(SpRanger); library(cowplot)
 
@@ -9,7 +13,9 @@ t1 <- Sys.time()
 
 #print("Dropping Species!")
 
-#source("Iceberg Code/Iceberg Greg ENM Code/00_Iceberg Species Dropping.R")
+setwd(paste0("~/Albersnet/Iceberg Files/", "Climate1"))
+
+source("~/Albersnet/Iceberg Code/Iceberg Greg ENM Code/00_Iceberg Species Dropping.R")
 
 print("Doing Currents!")
 
@@ -19,12 +25,14 @@ paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>%
   FullFiles
 
 paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>% 
-  list.files() %>% str_remove(".rds$") %>% str_split("__") %>% map_chr(2) %>%
+  list.files() %>% str_remove(".rds$") %>% #str_split("__") %>% map_chr(2) %>%
   append(paste0("Iceberg Input Files/","RangeBags","/01_Raw/Currents") %>% 
-           list.files() %>% str_remove(".rds$") %>% str_split("__") %>% map_chr(2)) ->
+           list.files() %>% str_remove(".rds$")) -> # %>% str_split("__") %>% map_chr(2)) ->
   names(FullFiles)
 
-Species <- SpeciesList %>% unlist %>% sort()
+# FullFiles <- FullFiles[!duplicated(names(FullFiles))]
+
+Species <- SpeciesList %>% unlist %>% sort() %>% unique
 
 Files <- FullFiles[Species]
 
@@ -131,7 +139,15 @@ if(length(ToProcess)>0){
     
     print(Sp)
     
-    SubFiles <- Files[[Sp]]# %>% list.files(full.names = T)
+    SubFiles <- Files[[Sp]] %>% list.files(full.names = T) %>% sort
+    
+    if(!Sp %in% RangeBagSp){
+      
+      SubFiles <- SubFiles[str_detect(SubFiles, "TP05")]
+      
+    }
+    
+    # SubFiles %>% print
     
     if(length(SubFiles)>0){
       
@@ -142,6 +158,7 @@ if(length(ToProcess)>0){
       RasterLista <- raster::resample(RasterLista, blank, method = 'ngb')
       
       GretCDF <- data.frame(
+        
         X = seq(from = XMin, to = XMax, length.out = NCol) %>% rep(NRow),
         Y = seq(from = YMax, to = YMin, length.out = NRow) %>% rep(each = NCol),
         
@@ -153,19 +170,27 @@ if(length(ToProcess)>0){
       
       if(Sp%in%IUCNSp){
         
-        if(nrow(IUCNBuffers[[Sp]])>0){
+        if(length(nrow(IUCNBuffers[[Sp]])>0)){
           
-          sf1 <- st_cast(IUCNBuffers[[Sp]], "MULTIPOLYGON")
-          r1 <- fasterize::fasterize(sf1, blank)
-          
-          IUCNValues <- values(r1)
-          
-          if(length(IUCNValues)>0){
+          if(nrow(IUCNBuffers[[Sp]])>0){
             
-            GretCDF$IUCN <- 0
-            GretCDF[which(!is.na(IUCNValues)),"IUCN"] <- 1
+            sf1 <- st_cast(IUCNBuffers[[Sp]], "MULTIPOLYGON")
+            r1 <- fasterize::fasterize(sf1, blank)
             
-          }else{
+            IUCNValues <- values(r1)
+            
+            if(sum(IUCNValues, na.rm = T)>0){
+              
+              GretCDF$IUCN <- 0
+              GretCDF[which(!is.na(IUCNValues)),"IUCN"] <- 1
+              
+            }else{
+              
+              GretCDF$IUCN <- 1
+              
+            }
+            
+          } else{
             
             GretCDF$IUCN <- 1
             
@@ -176,7 +201,6 @@ if(length(ToProcess)>0){
           GretCDF$IUCN <- 1
           
         }
-        
         
       } else{
         
@@ -264,23 +288,30 @@ if(length(ToProcess)>0){
         
         for(j in c("Climate","ClimateLandUse")){
           
-          if(j == "ClimateLandUse"&all(GretCDF$Climate==GretCDF$ClimateLandUse)){
+          if(sum(GretCDF[,j]) > 0){
             
-            GretCDF[,"BufferClimateLandUse"] <- GretCDF[,"BufferClimate"]
+            if(j == "ClimateLandUse"&all(GretCDF$Climate==GretCDF$ClimateLandUse)){
+              
+              GretCDF[,"BufferClimateLandUse"] <- GretCDF[,"BufferClimate"]
+              
+            }else{
+              
+              r1 <- blank
+              
+              values(r1) <- c(1)[ifelse(GretCDF[,j] == 1, 1, NA)]
+              r2 <- buffer2(r1, Dist)
+              r3 <- resample(r2, blank, method = "ngb")
+              
+              GretCDF[,paste0("Buffer",j)] <- values(r3)
+              GretCDF[,paste0("Buffer",j)][is.na(GretCDF[,paste0("Buffer",j)])] <- 0
+              
+            }
             
           }else{
             
-            r1 <- blank
-            
-            values(r1) <- c(1)[ifelse(GretCDF[,j]==1,1,NA)]
-            r2 <- buffer2(r1, Dist)
-            r3 <- resample(r2, blank, method = "ngb")
-            
-            GretCDF[,paste0("Buffer",j)] <- values(r3)
-            GretCDF[,paste0("Buffer",j)][is.na(GretCDF[,paste0("Buffer",j)])] <- 0
+            GretCDF[,paste0("Buffer",j)] <- 0
             
           }
-          
         }
         
       } else {
@@ -295,7 +326,7 @@ if(length(ToProcess)>0){
       
     }
     
-  }, mc.preschedule = F, mc.cores = 1)
+  }, mc.preschedule = F, mc.cores = CORES)
   
   # stop()
   

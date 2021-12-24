@@ -3,6 +3,8 @@
 
 library(tidyverse); library(raster); library(parallel); library(sf); library(Matrix); library(magrittr); library(SpRanger); library(cowplot)
 
+dir_create("Iceberg Extended Data")
+
 theme_set(theme_cowplot() + theme(strip.background = element_rect(fill = "white")))
 
 PredReps <- c("Currents", paste0("Futures", 1:4))
@@ -20,12 +22,12 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 # Overall trends ###
 
-AllMammaldf <- readRDS("~/Albersnet/Iceberg Output Files/AllMammaldf.rds")
+AllMammaldf <- readRDS("Iceberg Output Files/AllMammaldf.rds")
 
 # Import #####
 
 CurrentsGridDF <- readRDS("~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/CurrentsGridDF.rds")
-FuturesGridDF <- readRDS("~/Albersnet/Iceberg Files/Summary/Iceberg Output Files/FuturesGridDF.rds")
+FuturesGridDF <- readRDS("Iceberg Output Files/FuturesGridDF.rds")
 
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(SpRanger); library(raster)
 library(sf); library(fasterize);library(ggregplot); library(igraph);library(maptools)
@@ -123,7 +125,7 @@ names(PipeLabels) <- NEReps
 
 # Overall maps ####
 
-NewIntersects <- readRDS("~/Albersnet/Iceberg Files/Summary/Iceberg Output Files/NewIntersects.rds")
+NewIntersects <- readRDS("Iceberg Output Files/NewIntersects.rds")
 
 # New Encounters A and C ####
 

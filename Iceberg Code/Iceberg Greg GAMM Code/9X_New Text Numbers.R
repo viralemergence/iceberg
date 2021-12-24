@@ -21,7 +21,7 @@ glue::glue("Climate{1:9}") ->
 
 # Importing New Encounters ####
 
-glue("Iceberg Files/{ClimateReps}/Iceberg Output Files/NewEncounters.rds") %>% 
+glue("~/Albersnet/Iceberg Files/{ClimateReps}/Iceberg Output Files/NewEncounters.rds") %>% 
   map(readRDS) -> 
   NewEncountersListList
 
@@ -384,6 +384,8 @@ FullRangeChangeDF %>% filter(str_detect(Rep, "BufferClimateLandUse.Futures4$")) 
 # AllMammalDFList %>% map(~.x %>% dplyr::select(Sp, Sp2) %>% unlist %>% unique) -> AllMammalsList
 
 # AllMammalsList %>% reduce(union) -> AllMammals
+
+# saveRDS(AllMammals, file = "~/Albersnet/Iceberg Files/Summary/AllMammals.rds)
 
 FullRangeChangeDF %>% 
   filter(str_detect(Rep, "BufferClimateLandUse.Futures1$")) %>% 

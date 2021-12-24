@@ -26,7 +26,9 @@ paste0("Iceberg Input Files/","MaxEnt","/01_Raw/Currents") %>%
            list.files() %>% str_remove(".rds$") %>% str_split("__") %>% map_chr(2)) ->
   names(FullFiles)
 
-Species <- SpeciesList %>% unlist %>% sort()
+"Iceberg Input Files/GretCDF/Currents" %>% list.files %>% str_remove_all(".rds$") ->
+
+Species
 
 Files <- FullFiles[Species]
 
@@ -116,10 +118,10 @@ NRow <- nrow(blank)
 
 i = 1  
 
-Processed <- paste0("Iceberg Input Files/GretCDF/","Currents") %>% 
+Processed <- paste0("Iceberg Input Files/GretCDF/","IUCNCheck") %>% 
   list.files %>% str_remove(".rds$")
 
-ToProcess <- intersect(Species, Processed)
+ToProcess <- setdiff(Species, Processed)
 
 ToProcess#  <- Species
 

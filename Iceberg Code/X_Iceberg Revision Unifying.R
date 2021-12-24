@@ -28,7 +28,7 @@ PredReps <- c("Currents", paste0("Futures", 1:4))
 
 # Combining Mammal DF's ####
 
-glue("Iceberg Files/{ClimateReps}/Iceberg Output Files/AllMammaldf.rds") %>% 
+glue("~/Albersnet/Iceberg Files/{ClimateReps}/Iceberg Output Files/AllMammaldf.rds") %>% 
   map(readRDS) -> 
   AllMammalDFList
 
@@ -238,3 +238,25 @@ RangeChangeListList %>% unlist(recursive = F) %>%
 FullRangeChangeDF %<>% mutate(ClimateRep = ClimateRep %>% str_remove(paste0(".", Sp)))
 
 FullRangeChangeDF %>% saveRDS(file = "Iceberg Files/Summary/Iceberg Output Files/FullRangeChangeDF.rds")
+
+
+library(zip)
+
+
+?zip
+
+dir_create("ClimateRepFigures")
+
+ClimateReps %>% map(~glue("~/Albersnet/Iceberg Files/{.x}/Iceberg Figures") %>% 
+                      dir_copy(glue("ClimateRepFigures/{.x}")))
+
+dir_create("NewEncountersFiles")
+
+ClimateReps %>% map(~glue("~/Albersnet/Iceberg Files/{.x}/Iceberg Output Files/NewEncounters.rds") %>% 
+                      file_copy(glue("NewEncountersFiles/{.x}.rds")))
+
+
+
+
+
+

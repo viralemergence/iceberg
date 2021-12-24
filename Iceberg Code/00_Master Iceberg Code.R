@@ -7,7 +7,7 @@ library(tidyverse); library(fs); library(magrittr)
 
 setwd("~/Albersnet/")
 
-CORES <- 60
+CORES <- 30
 
 # dir_copy("data/", "Iceberg Files/Climate1/data")
 
@@ -34,17 +34,17 @@ ENMScripts[!str_detect(ENMScripts, "00b")] -> ENMScripts
 
 names(CoryClimateReps) <- ClimateReps
 
-if(0){
+if(1){
   
   CR <- 1
   
-  for(CR in CR:length(ClimateReps)){
+  # for(CR in CR:length(ClimateReps)){
     
     print(ClimateReps[CR])
     
     setwd(paste0("~/Albersnet/Iceberg Files/", ClimateReps[CR]))
     
-    for(Script in ENMScripts[3]){
+    for(Script in ENMScripts[1]){
       
       print(Script)
       
@@ -52,7 +52,7 @@ if(0){
       
     }
   }
-}
+# }
 
 # GAMM Stuff ####
 
@@ -63,13 +63,13 @@ if(0){
 
 GAMMScripts[!str_detect(GAMMScripts, "Master")] -> GAMMScripts
 
-CR <- 2
+CR <- 1
 
 for(CR in CR:length(ClimateReps)){
   
   setwd(paste0("~/Albersnet/Iceberg Files/", ClimateReps[CR]))
   
-  for(Script in GAMMScripts[8]){
+  for(Script in GAMMScripts[11]){
     
     print(Script)
     
