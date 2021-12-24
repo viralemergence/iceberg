@@ -278,9 +278,13 @@ if(length(ToProcess)>0){
       
       if(Sp%in%ToBuffer){
         
+<<<<<<< HEAD
         Dist <- Dispersals %>% 
           filter(Scientific_name == Sp) %>% 
           pull(disp50)*1000/2 # DIVIDE BY TWO BECAUSE HALF THE TIME
+=======
+        Dist <- Dispersals %>% filter(Scientific_name == Sp) %>% pull(disp50)*1000
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
         
         j = "Climate"
         
@@ -347,11 +351,17 @@ CurrentCDFList <- list()
 
 if(0){
   
+<<<<<<< HEAD
   Species <- Species %>% sort %>% intersect(names(CurrentFiles)) #%>% intersect(names(FutureFiles))
   
   CurrentFiles <- CurrentFiles[Species]
   
   CurrentCDFList <- 
+=======
+  1:length(Species) %>% 
+  
+  mclapply(function(a){
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
     
     1:length(Species) %>% 
     
@@ -394,6 +404,7 @@ if(0){
   
   if(length(InsertSpecies)>0){
     
+<<<<<<< HEAD
     NewAdj <- NewAdj %>% data.frame()
     NewAdj[InsertSpecies,] <- 0; NewAdj[,InsertSpecies] <- 0
     NewAdj <- NewAdj %>% as.matrix
@@ -462,14 +473,44 @@ Species <- Species %>% sort %>%
   intersect(names(CurrentFiles))  %>% 
   intersect(names(CurrentFiles2)) %>% 
   intersect(names(CurrentFiles3))
+=======
+    readRDS(CurrentFiles[[Sp]]) %>% as.matrix %>% 
+      as.data.frame() %>% dplyr::select(Climate, ClimateLandUse)
+    
+  }, mc.preschedule = F, mc.cores = CORES)
 
-CurrentFiles2 <- CurrentFiles2[Species]
-CurrentFiles3 <- CurrentFiles3[Species]
+object.size(CurrentCDFList)/(10^9)
 
-HistoricalBufferClip <- T
+names(CurrentCDFList) <- Species
 
-CurrentCDFList <- 
+# CurrentCDFList %>% map("Climate") %>% 
+#   map(function(a) a*(AreaValues[-Sea])) %>% bind_cols() %>% as.data.frame() ->
+#   ValueDF
+# 
+# print("Calculating overlap!")
+# 
+# RangeAdj <- PairsWisely(Rasterstack = ValueDF, Area = T)
+# 
+# saveRDS(RangeAdj, file = paste0("Iceberg Files/Historical/", "HistoricalRangeAdj.rds"))
+
+CurrentCDFList %>% map("ClimateLandUse") %>% 
+  map(function(a) a*(AreaValues[-Sea])) %>% bind_cols() %>% as.data.frame() ->
+  ValueDF
+
+print("Calculating overlap!")
+
+RangeAdj <- PairsWisely(Rasterstack = ValueDF, Area = T)
+
+saveRDS(RangeAdj, file = paste0("Iceberg Files/Historical/", "HistoricalLandUseRangeAdj.rds"))
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
+
+stop()
+
+# Importing the non-IUCN Clip ones ####
+
+if(0){
   
+<<<<<<< HEAD
   mclapply(1:length(Species), function(a){
     
     Sp = Species[a]
@@ -596,6 +637,68 @@ if(0){
   
   CurrentCDFList <- 
     
+=======
+  paste0("~/Albersnet/Iceberg Files/", 
+         "Historical/GretCDF") %>% 
+    list.files() %>% 
+    str_remove(".rds$") %>% sort ->
+    Species
+  
+  paste0("~/Albersnet/Iceberg Files/", 
+         "Historical/GretCDF") %>% 
+    list.files(full.names = T) ->
+    CurrentFiles
+  
+  Species ->
+    names(CurrentFiles)
+  
+  paste0("~/Albersnet/Iceberg Files/",
+         "Climate1/Iceberg Input Files/",
+         "GretCDF/IUCNCheck") %>% 
+    list.files() %>% 
+    str_remove(".rds$") %>% sort ->
+    Species
+  
+  paste0("~/Albersnet/Iceberg Files/",
+         "Climate1/Iceberg Input Files/",
+         "GretCDF/IUCNCheck")  %>% 
+    list.files(full.names = T) ->
+    CurrentFiles2
+  
+  Species ->
+    names(CurrentFiles2)
+  
+  paste0("~/Albersnet/Iceberg Files/",
+         "Climate1/Iceberg Input Files/",
+         "GretCDF/Currents") %>% 
+    list.files() %>% 
+    str_remove(".rds$") %>% sort ->
+    Species
+  
+  paste0("~/Albersnet/Iceberg Files/",
+         "Climate1/Iceberg Input Files/",
+         "GretCDF/Currents")  %>% 
+    list.files(full.names = T) ->
+    CurrentFiles3
+  
+  Species ->
+    names(CurrentFiles3)
+  
+  CurrentCDFList <- list()
+  
+  Species <- Species %>% sort %>% 
+    intersect(names(CurrentFiles))  %>% 
+    intersect(names(CurrentFiles2)) %>% 
+    intersect(names(CurrentFiles3))
+  
+  CurrentFiles2 <- CurrentFiles2[Species]
+  CurrentFiles3 <- CurrentFiles3[Species]
+  
+  HistoricalBufferClip <- T
+  
+  CurrentCDFList <- 
+    
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
     mclapply(1:length(Species), function(a){
       
       Sp = Species[a]
@@ -898,8 +1001,12 @@ FHN <- FinalHostNames; length(FHN)
 
 HostMatrixdf <- data.frame(#Virus = c(HostAdj[FHN, FHN]),
   Historical = c(RangeAdjList$HistoricalLandUseRangeAdj.rds[FHN, FHN]),
+<<<<<<< HEAD
   Space = c(RangeAdjList$DispersalPreClipRangeAdjLandUse.rds[FHN, FHN]),
   # Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[FHN, FHN]),
+=======
+  Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[FHN, FHN]),
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
   Phylo = c(tFullSTMatrix[FHN, FHN]),
   Virus = c(HostAdj[FHN, FHN]),
   Sp = as.character(rep(FHN, each = length(FHN))),
@@ -969,8 +1076,12 @@ FHN <- levels(FinalHostMatrix$Sp)
 
 HostMatrixdf <- data.frame(#Virus = c(HostAdj[FHN, FHN]),
   Historical = c(RangeAdjList$HistoricalLandUseRangeAdj.rds[FHN, FHN]),
+<<<<<<< HEAD
   Space = c(RangeAdjList$DispersalPreClipRangeAdjLandUse[FHN, FHN]),
   # Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[FHN, FHN]),
+=======
+  Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[FHN, FHN]),
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
   Phylo = c(tFullSTMatrix[FHN, FHN]),
   Virus = c(HostAdj[FHN, FHN]),
   Sp = as.character(rep(FHN, each = length(FHN))),
@@ -1044,8 +1155,12 @@ AllMammalMatrix <- data.frame(
   Sp = as.character(rep(AllMammals,each = length(AllMammals))),
   Sp2 = as.character(rep(AllMammals,length(AllMammals))),
   Historical = c(RangeAdjList$HistoricalLandUseRangeAdj.rds[AllMammals, AllMammals]),
+<<<<<<< HEAD
   Space = c(RangeAdjList$DispersalPreClipRangeAdjLandUse.rds[AllMammals, AllMammals]),
   # Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[AllMammals, AllMammals]),
+=======
+  Space = c(RangeAdjList$PreClipRangeAdjDispersalClipped.rds[AllMammals, AllMammals]),
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
   Phylo = c(tFullSTMatrix[AllMammals,AllMammals])
 ) %>% 
   mutate(Gz = as.numeric(Space==0)) %>% droplevels
@@ -1415,6 +1530,7 @@ NewEncountersList <-
   
   AllMammaldf[AllMammaldf[,("Historical")]==0&
                 AllMammaldf[,("Current")]>0,]
+<<<<<<< HEAD
 
 
 # Making old encounters ####
@@ -1607,9 +1723,13 @@ CurrentCDFList <-
   }, mc.preschedule = F, mc.cores = CORES)
 
 object.size(CurrentCDFList)/(10^9)
+=======
+
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
 
 names(CurrentCDFList) <- Species
 
+<<<<<<< HEAD
 # New Encounters ####
 
 NewIntersectsManual <- 
@@ -1792,4 +1912,347 @@ NewEncounters %>% filter(Sp %in% BatSpecies|Sp2 %in% BatSpecies) %>%
 # and maybe mean % range change
 
 
+=======
+OldEncountersList <- 
+  AllMammaldf[AllMammaldf[,("Historical")]>0&
+                AllMammaldf[,("Current")]==0,]
 
+saveRDS(AllMammaldf, file = "Iceberg Files/Historical/AllMammaldf.rds")
+saveRDS(NewEncountersList, file = paste0("Iceberg Files/Historical/NewEncounters.rds"))
+saveRDS(OldEncountersList, file = paste0("Iceberg Files/Historical/OldEncounters.rds"))
+
+
+# 5_Making Maps ####
+
+# NewEncountersList %>% dplyr::select(Sp, Sp2) %>% unlist %>% unique ->
+# InvolvedSpecies
+
+# Rscript "Final Iceberg Code/5_Iceberg Mapping.R"
+
+library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(SpRanger); library(raster)
+library(sf); library(fasterize);library(ggregplot); library(igraph);library(maptools)
+
+AreaRaster <- raster("Iceberg Files/Climate1/Iceberg Input Files/LandArea.asc")
+AreaValues <- raster::values(AreaRaster)
+
+# IcebergAdjList <- readRDS(paste0("Iceberg Files/Historical/", "IcebergAdjList.rds"))
+
+NewEncountersList <- readRDS(paste0("Iceberg Files/Historical/", "NewEncounters.rds"))
+
+AllMammaldf <- readRDS(paste0("Iceberg Files/Historical/", "AllMammaldf.rds"))
+
+# SpaceVars <- paste0(paste("Space", PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
+# SharingVars <- paste0(paste("Sharing", PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
+
+# names(SpaceVars) <- names(SharingVars) <- 
+#  paste0(PredReps,rep(PipelineReps, each = length(PredReps)))
+
+# Iceberg General Maps ####
+
+GridList <- NEGridList <- list()
+
+CORES = 10
+
+t1 <- Sys.time()
+
+# Blanks
+blank <- matrix(0,360*2,720*2) # proper resolution
+blank <- raster(blank)
+extent(blank) <- c(-180,180,-90,90)
+projection(blank) <- CRS("+proj=longlat +datum=WGS84")
+
+UniversalBlank <- raster("Iceberg Input Files/UniversalBlank.tif")
+Land = which(raster::values(UniversalBlank)==0)
+Sea = which(is.na(raster::values(UniversalBlank)))
+
+NewEncountersList %>% dplyr::select(Sp, Sp2) %>% unlist %>% unique ->
+  Species
+
+paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Input Files/GretCDF/Currents") %>% 
+  list.files(full.names = T) ->
+  CurrentFiles
+
+paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Input Files/GretCDF/Currents") %>% 
+  list.files() %>% str_remove(".rds$") ->
+  names(CurrentFiles)
+
+paste0("Iceberg Input Files/GretCDF/Futures") %>% 
+  list.files(full.names = T) ->
+  FutureFiles
+
+paste0("Iceberg Input Files/GretCDF/Futures") %>% 
+  list.files() %>% str_remove(".rds$") ->
+  names(FutureFiles)
+
+# Adding bat exception ####
+
+Panth1 <- read.delim("data/PanTHERIA_1-0_WR05_Aug2008.txt") %>%
+  dplyr::rename(Sp = MSW05_Binomial, hOrder = MSW05_Order, hFamily = MSW05_Family)
+Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
+
+Panth1 %>% filter(hOrder == "Chiroptera") %>% pull(Sp) %>%
+  intersect(Species) ->
+  BatSpecies
+
+CurrentFiles <- CurrentFiles[Species]
+FutureFiles <- FutureFiles[Species]
+
+# PipelineReps <- LETTERS[1:4]
+
+# Importing files ####
+
+paste0("~/Albersnet/Iceberg Files/", 
+       "Historical/GretCDF") %>% 
+  list.files() %>% 
+  str_remove(".rds$") %>% sort ->
+  Species
+
+paste0("~/Albersnet/Iceberg Files/", 
+       "Historical/GretCDF") %>% 
+  list.files(full.names = T) ->
+  CurrentFiles
+
+Species ->
+  names(CurrentFiles)
+
+paste0("~/Albersnet/Iceberg Files/",
+       "Climate1/Iceberg Input Files/",
+       "GretCDF/IUCNCheck") %>% 
+  list.files() %>% 
+  str_remove(".rds$") %>% sort ->
+  Species
+
+paste0("~/Albersnet/Iceberg Files/",
+       "Climate1/Iceberg Input Files/",
+       "GretCDF/IUCNCheck")  %>% 
+  list.files(full.names = T) ->
+  CurrentFiles2
+
+Species ->
+  names(CurrentFiles2)
+
+paste0("~/Albersnet/Iceberg Files/",
+       "Climate1/Iceberg Input Files/",
+       "GretCDF/Currents") %>% 
+  list.files() %>% 
+  str_remove(".rds$") %>% sort ->
+  Species
+
+paste0("~/Albersnet/Iceberg Files/",
+       "Climate1/Iceberg Input Files/",
+       "GretCDF/Currents")  %>% 
+  list.files(full.names = T) ->
+  CurrentFiles3
+
+Species ->
+  names(CurrentFiles3)
+
+CurrentCDFList <- list()
+
+Species <- Species %>% sort %>% 
+  intersect(names(CurrentFiles))  %>% 
+  intersect(names(CurrentFiles2)) %>% 
+  intersect(names(CurrentFiles3))
+
+CurrentFiles2 <- CurrentFiles2[Species]
+CurrentFiles3 <- CurrentFiles3[Species]
+
+Species <- NewEncountersList %>% dplyr::select(Sp, Sp2) %>% unlist %>% unique %>% 
+  intersect(Species) %>% sort
+
+HistoricalBufferClip <- T
+
+CurrentCDFList <- 
+  
+  mclapply(1:length(Species), function(a){
+    
+    Sp = Species[a]
+    
+    print(CurrentFiles2[a])
+    
+    DF <- readRDS(CurrentFiles2[[Sp]]) %>% as.matrix %>% 
+      as.data.frame() %>% dplyr::select(PreClipClim) %>% 
+      mutate(BufferPreClipClim = PreClipClim)
+    
+    # Clip by buffer? ####
+    
+    # if(HistoricalBufferClip){
+    
+    DF2 <- readRDS(CurrentFiles[[Sp]]) %>% as.matrix %>% 
+      as.data.frame() %>% pull(BufferClimate)
+    
+    DF$BufferPreClipClim[!DF2==1] <- 0
+    
+    # DF$IUCNClippedClimate <- 
+    #   DF$DispersalIUCNClippedClimate <- 
+    #   readRDS(CurrentFiles3[[Sp]]) %>% as.matrix %>% 
+    #   as.data.frame() %>% pull(Climate)
+    # 
+    # DF$DispersalIUCNClippedClimate[!DF2==1] <- 0
+    
+    
+    # }
+    
+    DF %>% dplyr::select(BufferPreClipClim) %>% return
+    
+  }, mc.preschedule = F, mc.cores = CORES)
+
+names(CurrentCDFList) <- Species
+
+# NewEncounters ####
+
+NewIntersectsManual <- #CurrentCDFList[[1]] %>% dplyr::select(X, Y)
+  readRDS(CurrentFiles[[1]]) %>% as.matrix %>% 
+  as.data.frame() %>% dplyr::select(X, Y)
+
+if(file.exists("Iceberg Files/Historical/NewIntersects.rds")){
+  
+  NewIntersectsManual <- readRDS("Iceberg Output Files/NewIntersects.rds")
+  
+  PipelineReps <- PipelineReps %>% setdiff(c("A", "B"))
+  
+}
+
+NewEncounters <- NewEncountersList#[[Pipeline]][[PredReps[x]]]
+
+CurrentCDFList %>%
+  # map("BufferPreClipClim") %>% 
+  bind_cols %>% as.data.frame() ->
+  ValueDF
+
+ValueDF %<>% 
+  mutate_all(~ifelse(is.na(.x), 0, .x))
+>>>>>>> cfb2e9804a2e253608955586fde1c95715142814
+
+names(ValueDF) <- Species
+
+OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
+NoBatOverlapSums <- NoBatOverlapSharingSums <- NoBatDeltaOverlapSharing <- rep(0, nrow(ValueDF))
+
+y = 1
+
+for(y in y:nrow(NewEncounters)){
+  
+  if(y %% 10000==0) print(y)
+  
+  Sp1 <- NewEncounters[y,"Sp"]
+  Sp2 <- NewEncounters[y,"Sp2"]
+  
+  SubSums <- as.numeric(rowSums(ValueDF[,c(Sp1,Sp2)])>1)
+  
+  OverlapSums <- OverlapSums + SubSums
+  # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+  
+  OverlapSharingSums <- OverlapSharingSums +
+    
+    SubSums*NewEncounters[y, paste0("Sharing")]
+  
+  DeltaOverlapSharing <- DeltaOverlapSharing +
+    
+    SubSums*NewEncounters[y, paste0("DeltaSharing")]
+  
+  # if(!Sp1%in%BatSpecies&!Sp2%in%BatSpecies){
+  #   
+  #   NoBatOverlapSums <- NoBatOverlapSums + SubSums
+  #   # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+  #   
+  #   NoBatOverlapSharingSums <- NoBatOverlapSharingSums +
+  #     
+  #     SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
+  #   
+  #   NoBatDeltaOverlapSharing <- NoBatDeltaOverlapSharing +
+  #     
+  #     SubSums*NewEncounters[y, paste0("DeltaSharing.",PredReps[x],Pipeline)]
+  #   
+  #   
+  # }
+  
+}
+
+NewIntersectsManual[,paste0("Overlap")] <-
+  OverlapSums
+
+NewIntersectsManual[,paste0("OverlapSharing")] <-
+  OverlapSharingSums
+
+NewIntersectsManual[,paste0("DeltaOverlapSharing")] <-
+  DeltaOverlapSharing
+
+# NewIntersectsManual[,paste0("NoBatOverlap.",PredReps[x],Pipeline)] <-
+#   NoBatOverlapSums
+# 
+# NewIntersectsManual[,paste0("NoBatOverlapSharing.",PredReps[x],Pipeline)] <-
+#   NoBatOverlapSharingSums
+# 
+# NewIntersectsManual[,paste0("NoBatDeltaOverlapSharing.",PredReps[x],Pipeline)] <-
+#   NoBatDeltaOverlapSharing
+
+saveRDS(NewIntersectsManual, file = "Iceberg Files/Historical/NewIntersects.rds")
+
+library(cowplot); library(colorspace); library(patchwork)
+library(tidyverse); library(raster); library(parallel); library(sf); library(Matrix); library(magrittr); library(SpRanger); library(cowplot);
+library(RColorBrewer); library(fs); library(colorspace); library(glue); library(mgcv)
+library(patchwork); library(ggregplot); library(ggplot2); library(RColorBrewer)
+
+theme_set(theme_cowplot())
+
+(NewIntersectsManual %>% 
+    ggplot(aes(X, Y, fill = Overlap)) +
+    geom_tile() + coord_sf() + 
+    scale_fill_continuous_sequential(AlberPalettes[[1]])) /
+  
+  (NewIntersectsManual %>% 
+     ggplot(aes(X, Y, fill = DeltaOverlapSharing)) +
+     geom_tile() + coord_sf() + 
+     scale_fill_continuous_sequential(AlberPalettes[[1]]))
+
+UniversalBlank <- raster("Iceberg Files/Climate1/Iceberg Input Files/UniversalBlank.tif")
+Land = which(raster::values(UniversalBlank)==0)
+Sea = which(is.na(raster::values(UniversalBlank)))
+
+DarkSpectral <- rev(colorRampPalette(brewer.pal(11,"Spectral"))(100))
+
+GregRast <- function(DF, x, Projection = NULL) {
+  
+  r <- UniversalBlank
+  
+  values(r)[Sea] <- NA
+  values(r)[-Sea] <- DF[,x]
+  
+  r
+  
+}
+
+conts <- raster('Iceberg Files/Climate1/Iceberg Input Files/continents-madagascar.tif')
+africa <- conts; africa[!(africa == 1)] <- NA; africa <- africa-1
+
+africashp <- rasterToPolygons(africa, dissolve = TRUE)
+contsshp <- rasterToPolygons(conts, dissolve = TRUE)
+
+pdf("Iceberg Files/Historical/Historical.pdf", width = 12, height = 10)
+
+par(mfrow = c(2, 1), mar = c(0, 0.5, 0, 5))
+
+NewIntersectsManual %>% 
+  GregRast("Overlap") %>% 
+  plot(axes = FALSE, box = FALSE,
+       legend.shrink = 0.8, 
+       legend.width = 2, 
+       axis.args = list(cex.axis = 1.2),
+       col = DarkSpectral,
+       legend.args=list(text='First encounters', side=2, line=0.4, cex=1.5))
+
+plot(contsshp, lwd = 0.5, add = TRUE)
+
+NewIntersectsManual %>% 
+  GregRast("DeltaOverlapSharing") %>% 
+  plot(axes = FALSE, box = FALSE, legend.shrink = 0.8, 
+       #legend.shrink = 0.8, 
+       legend.width = 2, 
+       axis.args = list(cex.axis = 1.2),
+       col = DarkSpectral,
+       legend.args=list(text='Viral sharing events', side=2, line=0.4, cex=1.5))
+
+plot(contsshp, lwd = 0.5, add = TRUE)
+
+dev.off()
