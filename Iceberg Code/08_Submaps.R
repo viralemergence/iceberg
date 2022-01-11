@@ -4,25 +4,8 @@
 library(tidyverse); library(raster); library(parallel); library(sf); 
 library(Matrix); library(magrittr); library(SpRanger); library(cowplot);library(colorspace)
 
-NewIntersects <- readRDS("Iceberg Output Files/NewIntersects.rds")
-
-NewEncountersList <- readRDS("Iceberg Output Files/NewEncounters.rds")
-
-PredReps <- c("Currents", paste0("Futures", 1:4))
-
-if(CoryClimateReps[CR] == "gf"){
-  
-  PredReps <- c("Currents", paste0("Futures", 1:4))[c(1, 2, 4)]
-  
-}
-
-PipelineReps <- LETTERS[1:4]
-
-SpaceVars <- paste0(paste("Space", PredReps, sep = "."),rep(PipelineReps, each = length(PredReps)))
-
-SharingVars <- paste0(paste("Sharing", PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
-
-names(SpaceVars) <- names(SharingVars) <- paste0(PredReps,rep(PipelineReps, each = length(PredReps)))
+setwd(here::here())
+setwd("Iceberg Files/CHELSA")
 
 # Blanks
 blank <- matrix(0,360*2,720*2) # proper resolution
@@ -30,7 +13,7 @@ blank <- raster(blank)
 extent(blank) <- c(-180,180,-90,90)
 projection(blank) <- CRS("+proj=longlat +datum=WGS84")
 
-UniversalBlank <- raster("Iceberg Input Files/UniversalBlank.tif")
+UniversalBlank <- raster("UniversalBlank.tif")
 Land = which(raster::values(UniversalBlank)==0)
 Sea = which(is.na(raster::values(UniversalBlank)))
 

@@ -1,9 +1,9 @@
 
-# Rscript "Final Iceberg Code/4_Iceberg Prediction.R" ####
+# Rscript "Iceberg Code/06_Prediction.R" ####
 
 # Iceberg Prediction ####
 
-CORES <- 60
+CORES <- 45
 
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(SpRanger)
 
@@ -11,12 +11,14 @@ source("~/Albersnet/Iceberg Code/04_Model Data Import.R")
 
 # PipelineReps <- LETTERS[1:4]
 
-load(paste0("~/Albersnet/Iceberg Files/Output Files/",
+load(paste0("~/Albersnet/Iceberg Files/CHELSA/Output Files/",
             "BAMList.Rdata"))
 
+setwd("Iceberg Files/CHELSA")
+
 IcebergAdjList <- #readRDS("Iceberg Output Files/IcebergAdjList.rds")
-  list(readRDS("Output Files/CurrentsLandUseRangeAdj.rds")
-       readRDS("Output Files/CurrentsLandUseRangeAdj.rds")) %>% 
+  list(readRDS("Output Files/CurrentsLandUseRangeAdj.rds"),
+       readRDS("Output Files/CurrentsRangeAdj.rds")) %>% 
   append(
     
     "Output Files/Ranges" %>% dir_ls() %>% map(readRDS)
@@ -28,6 +30,24 @@ names(IcebergAdjList) <-
   c("Output Files/Ranges" %>% list.files %>% 
       str_remove(".rds$") %>% 
       str_remove("RangeAdj"))
+
+CurrentSpecies <- rownames(IcebergAdjList$CCurrents)
+
+for(x in 1:length(IcebergAdjList)){
+  
+  NewAdj <- IcebergAdjList[[x]]
+  
+  InsertSpecies <- setdiff(CurrentSpecies, rownames(NewAdj))
+  
+  if(length(InsertSpecies)>0){
+    
+    NewAdj <- NewAdj %>% data.frame()
+    NewAdj[InsertSpecies,] <- 0; NewAdj[,InsertSpecies] <- 0
+    NewAdj <- NewAdj %>% as.matrix
+    
+    IcebergAdjList[[x]] <- NewAdj[CurrentSpecies, CurrentSpecies]
+  }
+}
 
 NonEutherians <- c("Diprotodontia",
                    "Dasyuromorphia",
@@ -45,22 +65,22 @@ Panth1$Sp <- Panth1$Sp %>% str_replace(" ", "_")
 
 NonEutherianSp <- Panth1[Panth1$hOrder%in%NonEutherians,"Sp"]
 
-tFullSTMatrix <- 1 - (FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp] - 
-                        min(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp]))/
-  max(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,!rownames(FullSTMatrix)%in%NonEutherianSp])
+tFullSTMatrix <- 1 - (FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,
+                                   !rownames(FullSTMatrix)%in%NonEutherianSp] - 
+                        min(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,
+                                         !rownames(FullSTMatrix)%in%NonEutherianSp]))/
+  max(FullSTMatrix[!rownames(FullSTMatrix)%in%NonEutherianSp,
+                   !rownames(FullSTMatrix)%in%NonEutherianSp])
 
-PredReps <- c("Currents", paste0("Futures", 1:4))
-
-if(CoryClimateReps[CR] == "gf"){
-  
-  PredReps <- c("Currents", paste0("Futures", 1:4))[c(1, 2, 4)]
-  
-}
+PredReps <- 
+  paste0("~/Albersnet/Iceberg Files/", 
+         "CHELSA", "/FinalRasters") %>% 
+  list.files() %>% 
+  setdiff("presen")
 
 # Making the prediction data frame ####
 
-AllMammals <- #reduce(lapply(IcebergAdjList$A, rownames), 
-                     # intersect) %>% 
+AllMammals <- 
   IcebergAdjList %>% map(rownames) %>% reduce(intersect) %>% 
   intersect(rownames(FullSTMatrix)) %>%
   setdiff(NonEutherianSp) %>% 
@@ -70,31 +90,31 @@ AllMammalMatrix <- data.frame(
   Sp = as.character(rep(AllMammals, each = length(AllMammals))),
   Sp2 = as.character(rep(AllMammals, length(AllMammals))),
   Phylo = c(tFullSTMatrix[AllMammals, AllMammals])
+  
 ) %>%
+  
   inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp" = "Sp")) %>%
   inner_join(Panth1[,c("Sp", "hFamily", "hOrder")], by = c("Sp2" = "Sp")) %>% droplevels()
 
 SpaceVars <- paste0("Space.", names(IcebergAdjList))
 
 SharingVars <- paste0("Sharing.", names(IcebergAdjList))
-  
+
 # names(SpaceVars) <- names(SharingVars) <- 
 #   paste0(PredReps, rep(PipelineReps, each = length(PredReps)))
 
 AllMammalMatrix[,SpaceVars] <-
   IcebergAdjList %>% lapply(function(a){
     
-    lapply(a, function(b){
-      
-      c(as.matrix(b[AllMammals,AllMammals]))
-      
-    }) %>% bind_cols()
+    c(as.matrix(a[AllMammals,AllMammals]))
     
-  }) %>% bind_cols
+  }) %>% bind_cols()
 
 UpperMammals <- which(upper.tri(tFullSTMatrix[AllMammals, AllMammals], diag = T))
 
 AllMammaldf <- AllMammalMatrix[-UpperMammals,]
+
+AllMammaldf[,c("Sp", "Sp2")] %>% saveRDS("Output Files/SpeciesPairs.rds")
 
 N = nrow(AllMammaldf)
 
@@ -112,26 +132,41 @@ AllMammaldf$MinCites <- mean(c(log(FinalHostMatrix$MinCites+1),
 
 AllMammaldf$Domestic <- 0
 
-Pipeline = "A"
-
 print("Prediction Effects!")
 
 Random = F
 
-for(Pipeline in PipelineReps){
+# Predict the currents ####
+
+if(file.exists("Output Files/CurrentSharing.rds")){
   
-  print(Pipeline)
-  
-  Model <- BAMList[[2 - which(LETTERS == Pipeline) %% 2]]
-  
-  SpCoefNames <- names(Model$coef)[substr(names(Model$coef),1,5)=="SppSp"]
-  SpCoef <- Model$coef[SpCoefNames]
-  
-  for(x in 1:length(PredReps)){
+  AllMammaldf[,paste0(rep(c("Space.", "Sharing."), 2),
+                      rep(c("CLUCurrents", "CCurrents"), each = 2))] <-
     
-    print(PredReps[x])
+    readRDS("Output Files/CurrentSharing.rds")
+  
+}else{
+  
+  for(Rep in c("CLUCurrents", "CCurrents")){
     
-    AllMammaldf$Space = AllMammaldf[,SpaceVars[paste0(PredReps[x], Pipeline)]]
+    print(Rep)
+    
+    CurrentsVar <- paste0("Space.", Rep)
+    
+    if(substr(Rep, 2, 3) == "LU"){
+      
+      Model <- BAMList[[1]]
+      
+    }else{
+      
+      Model <- BAMList[[2]]
+      
+    }
+    
+    SpCoefNames <- names(Model$coef)[substr(names(Model$coef),1,5)=="SppSp"]
+    SpCoef <- Model$coef[SpCoefNames]
+    
+    AllMammaldf$Space = AllMammaldf[,paste0("Space", ".", Rep)]
     AllMammaldf$Gz = as.numeric(AllMammaldf$Space==0)
     
     AllPredictions1b <- predict.bam(Model, 
@@ -160,39 +195,133 @@ for(Pipeline in PipelineReps){
       
       PredSums <- AllPredList %>% bind_cols %>% rowSums
       
-      AllMammaldf[,paste0(SharingVars[paste0(PredReps[x], Pipeline)])] <- PredSums/length(AllPredList)
+      AllMammaldf[,paste0("Sharing.", Rep)] <- 
+        
+        PredSums/length(AllPredList)
       
     }else{      
       
       PredSums <- logistic(rowSums(AllPredictions))
       
-      AllMammaldf[,paste0(SharingVars[paste0(PredReps[x], Pipeline)])] <- PredSums
+      AllMammaldf[,paste0("Sharing.", Rep)] <- 
+        PredSums
       
     }
   }
+  
+  AllMammaldf[,paste0(rep(c("Space.", "Sharing."), 2),
+                      rep(c("CLUCurrents", "CCurrents"), each = 2))] %>% 
+    
+    saveRDS("Output Files/Predictions/CurrentSharing.rds")
+  
+}
+
+# Predict the futures ####
+
+ToRun <-
+  "Output Files/Predictions/" %>% list.files %>% 
+  str_remove(".rds$") %>% 
+  str_remove("^Predictions") %>% 
+  setdiff("Output Files/Ranges" %>% list.files %>% 
+            str_remove(".rds$") %>% 
+            str_remove("RangeAdj"), .)
+
+print(paste0("To run: ", ToRun))
+
+for(Rep in ToRun){
+  
+  print(Rep)
+  
+  Pipeline <- Rep %>% str_split("[.]") %>% 
+    map_chr(1)
+  
+  if(substr(Pipeline, 1, 3) == "LU"){
+    
+    Model <- BAMList[[1]]
+    
+    CurrentsVar <- "Space.CLUCurrents"
+    
+    CurrentsSharing <- "Sharing.CLUCurrents"
+    
+  }else{
+    
+    Model <- BAMList[[2]]
+    
+    CurrentsVar <- "Space.CCurrents"
+    
+    CurrentsSharing <- "Sharing.CCurrents"
+    
+  }
+  
+  SpCoefNames <- names(Model$coef)[substr(names(Model$coef),1,5)=="SppSp"]
+  SpCoef <- Model$coef[SpCoefNames]
+  
+  AllMammaldf$Space = AllMammaldf[,paste0("Space", ".", Rep)]
+  AllMammaldf$Gz = as.numeric(AllMammaldf$Space==0)
+  
+  AllPredictions1b <- predict.bam(Model, 
+                                  newdata = AllMammaldf, # %>% select(-Spp),
+                                  type = "terms",
+                                  exclude = "Spp")
+  
+  AllIntercept <- attr(AllPredictions1b, "constant")
+  
+  AllPredictions <- AllPredictions1b %>% as.data.frame
+  
+  AllPredictions[,"Intercept"] <- AllIntercept
+  
+  if(Random){
+    
+    AllPredList <- mclapply(1:100, function(a){
+      
+      AllPredictions[,"Spp"] <- sample(SpCoef, N, replace = T) + 
+        sample(SpCoef, N, replace = T)
+      
+      AllPredSums <- logistic(rowSums(AllPredictions))
+      
+      return(AllPredSums)
+      
+    }, mc.cores = CORES)
+    
+    PredSums <- AllPredList %>% bind_cols %>% rowSums
+    
+    AllMammaldf[,paste0("Sharing.", Rep)] <- 
+      PredSums/length(AllPredList)
+    
+  }else{      
+    
+    PredSums <- logistic(rowSums(AllPredictions))
+    
+    AllMammaldf[,paste0("Sharing.", Rep)] <- 
+      PredSums
+    
+  }
+  
+  AllMammaldf[,paste0("DeltaSpace", ".", Rep)] <-
+    AllMammaldf[,paste0("Space", ".", Rep)] - 
+    AllMammaldf[,CurrentsVar]
+  
+  AllMammaldf[,paste0("DeltaSharing", ".", Rep)] <-
+    AllMammaldf[,paste0("Sharing", ".", Rep)] - 
+    AllMammaldf[,CurrentsSharing]
+  
+  AllMammaldf[,paste0(c("Space.", "Sharing.", 
+                        "DeltaSpace.", "DeltaSharing."),
+                      Rep)] %>% 
+    saveRDS(paste0("Output Files/Predictions/Predictions", 
+                   Rep, ".rds"))
+  
+  AllMammaldf[,paste0(c("Space.", "Sharing.", 
+                        "DeltaSpace.", "DeltaSharing."),
+                      Rep)] <- NULL
+  
 }
 
 AllMammaldf <- AllMammaldf %>% dplyr::select(-Spp)
 
-for(i in 1:length(PipelineReps)){
-  
-  AllMammaldf[, paste0("Delta", SpaceVars[2:length(PredReps) + (i-1)*length(PredReps)])] <-
-    
-    apply(AllMammaldf[, SpaceVars[2:length(PredReps) + (i-1)*length(PredReps)]], 2, function(a){
-      a - AllMammaldf[, paste0("Space.Currents", PipelineReps[i])]
-      
-    })
-}
+setwd(here::here())
 
-for(i in 1:length(PipelineReps)){
-  
-  AllMammaldf[, paste0("Delta", SharingVars[2:length(PredReps) + (i-1)*length(PredReps)])] <-
-    
-    apply(AllMammaldf[, SharingVars[2:length(PredReps) + (i-1)*length(PredReps)]], 2, function(a){
-      a - AllMammaldf[, paste0("Sharing.Currents", PipelineReps[i])]
-      
-    })
-}
+stop()
 
 # Making new encounters ####
 

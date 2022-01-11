@@ -210,7 +210,7 @@ if(NonFigures){
 
 library(raster)
 
-blank <- raster('Iceberg Input Files/UniversalBlank.tif')
+blank <- raster('~/Albersnet/Iceberg Files/CHELSA/UniversalBlank.tif')
 Sea = which(is.na(raster::values(blank)))
 
 rast <- function(x, Projection = NULL) {

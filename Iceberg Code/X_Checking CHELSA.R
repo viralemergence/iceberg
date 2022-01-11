@@ -3,12 +3,15 @@
 
 library(tidyverse)
 
-FocalSp <- "Catopuma_temminckii"
-# FocalSp <- "Acinonyx_jubatus"
+FocalSp <- "Abrocoma_bennettii"
+FocalSp <- "Acinonyx_jubatus"
+FocalSp <- "Acerodon_leucotis"
 
-Currents <- readRDS(paste0("Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/Currents/", FocalSp, ".rds"))
+FocalSp <- "Felis_margarita"
 
-Futures <- readRDS(paste0("Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/gf/", FocalSp, ".rds"))
+Currents <- readRDS(paste0("~/Albersnet/Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/Currents/", FocalSp, ".rds"))
+
+Futures <- readRDS(paste0("~/Albersnet/Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/gf/", FocalSp, ".rds"))
 
 FullDF <- 
   Currents %>% as.matrix %>% as.data.frame %>% 
@@ -22,7 +25,16 @@ FullDF %>% names
 
 FullDF %>% colSums
 
-FullDF %>% dplyr::select(X, Y, matches("Buffer..Climate")) %>% 
+# FullDF %>% mutate_at(c("Climate", "ClimateLandUse", ))
+
+FullDF %>% 
+  dplyr::select(X, Y, matches("^Climate")) %>% 
+  gather("Key", "Value", -c(X:Y)) %>% 
+  ggplot(aes(X, Y, fill = Value)) + 
+  geom_tile() + coord_sf() +
+  facet_wrap(~Key)
+
+FullDF %>% dplyr::select(X, Y, Climate, matches("Buffer..Climate$")) %>% 
   gather("Key", "Value", -c(X:Y)) %>% 
   ggplot(aes(X, Y, fill = Value)) + 
   geom_tile() + coord_sf() +

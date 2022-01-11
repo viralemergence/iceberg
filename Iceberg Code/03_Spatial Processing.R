@@ -158,7 +158,7 @@ print("Doing the futures!")
 
 FocalGCM <- GCMs[2]
 
-for(FocalGCM in GCMs[-2]){
+for(FocalGCM in GCMs[5]){
   
   print(FocalGCM)
   
@@ -175,7 +175,7 @@ for(FocalGCM in GCMs[-2]){
   # 
   # FutureCDFList[1:length(Species)] <- list(list())
   
-  if(1){
+  if(0){
     
     FutureCDFList <- 
       

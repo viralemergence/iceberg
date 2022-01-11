@@ -1,43 +1,106 @@
 
 # 5_Iceberg Making Map Data ####
 
-# Rscript "Final Iceberg Code/5_Iceberg Mapping.R"
+# Rscript "Iceberg Code/07_Mapping.R"
 
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(SpRanger); library(raster)
-library(sf); library(fasterize);library(ggregplot); library(igraph);library(maptools)
+library(sf); library(fasterize);library(ggregplot); library(igraph);library(maptools); library(fs)
+library(magrittr)
 
-PredReps <- c("Currents", paste0("Futures", 1:4))
+setwd(here::here())
+setwd("Iceberg Files/CHELSA")
 
-if(CoryClimateReps[CR] == "gf"){
+PredReps <- 
+  "Output Files/Predictions" %>% list.files %>% 
+  # str_split("[.]") %>% map_chr(2)
+  str_remove_all("Predictions|.rds$")
+
+AreaRaster <- raster("LandArea.asc")
+AreaValues <- raster::values(AreaRaster)
+
+if(0){
   
-  PredReps <- c("Currents", paste0("Futures", 1:4))[c(1, 2, 4)]
+  print("Importing adj list!")
+  
+  IcebergAdjList <- #readRDS("Iceberg Output Files/IcebergAdjList.rds")
+    list(readRDS("Output Files/CurrentsLandUseRangeAdj.rds"),
+         readRDS("Output Files/CurrentsRangeAdj.rds")) %>% 
+    append(
+      
+      "Output Files/Ranges" %>% dir_ls() %>% map(readRDS)
+      
+    )
+  
+  names(IcebergAdjList) <- 
+    c("CLUCurrents", "CCurrents") %>% 
+    c("Output Files/Ranges" %>% list.files %>% 
+        str_remove(".rds$") %>% 
+        str_remove("RangeAdj"))
+  
+  CurrentSpecies <- Species <- rownames(IcebergAdjList$CCurrents)
+  
+  for(x in 1:length(IcebergAdjList)){
+    
+    NewAdj <- IcebergAdjList[[x]]
+    
+    InsertSpecies <- setdiff(CurrentSpecies, rownames(NewAdj))
+    
+    if(length(InsertSpecies)>0){
+      
+      NewAdj <- NewAdj %>% data.frame()
+      NewAdj[InsertSpecies,] <- 0; NewAdj[,InsertSpecies] <- 0
+      NewAdj <- NewAdj %>% as.matrix
+      
+      IcebergAdjList[[x]] <- NewAdj[CurrentSpecies, CurrentSpecies]
+    }
+  }
+  
+  NewEncounterList <- 
+    IcebergAdjList[3:length(IcebergAdjList)] %>% 
+    names() %>% 
+    map(function(a){
+      
+      if(substr(a, 2, 3) == "LU"){
+        
+        Witch <- (IcebergAdjList$CLUCurrents == 0 & IcebergAdjList[[a]] > 0) %>% 
+          which() %>% 
+          intersect(which(lower.tri(IcebergAdjList[[a]])))
+        
+      }else{
+        
+        Witch <- (IcebergAdjList$CCurrents == 0 & IcebergAdjList[[a]] > 0) %>% 
+          which() %>% 
+          intersect(which(lower.tri(IcebergAdjList[[a]])))
+        
+      }
+      
+      IcebergAdjList[[a]] %>% 
+        reshape2::melt() %>% 
+        slice(Witch) %>% 
+        return
+      
+    })
+  
+  names(NewEncounterList) <-
+    IcebergAdjList[3:length(IcebergAdjList)] %>% 
+    names()
+  
+  saveRDS(NewEncounterList, file = "Output Files/NewEncounterList.rds")
+  
+  rm(IcebergAdjList)
   
 }
 
-PipelineReps <- LETTERS[1:4]
+NewEncounterList <- readRDS("Output Files/NewEncounterList.rds")
 
-AreaRaster <- raster("Iceberg Input Files/LandArea.asc")
-AreaValues <- raster::values(AreaRaster)
-
-IcebergAdjList <- readRDS(paste0("Iceberg Output Files/", "IcebergAdjList.rds"))
-
-NewEncountersList <- readRDS(paste0("Iceberg Output Files/", "NewEncounters.rds"))
-
-AllMammaldf <- readRDS(paste0("Iceberg Output Files/", "AllMammaldf.rds"))
-
-SpaceVars <- paste0(paste("Space", PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
-
-SharingVars <- paste0(paste("Sharing", PredReps, sep = "."), rep(PipelineReps, each = length(PredReps)))
-
-names(SpaceVars) <- names(SharingVars) <- 
-  
-  paste0(PredReps,rep(PipelineReps, each = length(PredReps)))
+Species <- CurrentSpecies <- readRDS("Output Files/CurrentsRangeAdj.rds") %>% 
+  rownames
 
 # Iceberg General Maps ####
 
 GridList <- NEGridList <- list()
 
-CORES = 60
+CORES = 35
 
 t1 <- Sys.time()
 
@@ -47,30 +110,25 @@ blank <- raster(blank)
 extent(blank) <- c(-180,180,-90,90)
 projection(blank) <- CRS("+proj=longlat +datum=WGS84")
 
-UniversalBlank <- raster("Iceberg Input Files/UniversalBlank.tif")
+UniversalBlank <- raster("UniversalBlank.tif")
 Land = which(raster::values(UniversalBlank)==0)
 Sea = which(is.na(raster::values(UniversalBlank)))
 
-Species <- 
-  paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Input Files/GretCDF/Currents") %>% 
-  list.files() %>% str_remove(".rds$") %>%
-  sort
-
-paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Input Files/GretCDF/Currents") %>% 
+paste0("~/Albersnet/Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/Currents") %>% 
   list.files(full.names = T) ->
   CurrentFiles
 
-paste0("~/Albersnet/Iceberg Files/Climate1/Iceberg Input Files/GretCDF/Currents") %>% 
+paste0("~/Albersnet/Iceberg Files/CHELSA/Iceberg Input Files/GretCDF/Currents") %>% 
   list.files() %>% str_remove(".rds$") ->
   names(CurrentFiles)
 
-paste0("Iceberg Input Files/GretCDF/Futures") %>% 
-  list.files(full.names = T) ->
-  FutureFiles
-
-paste0("Iceberg Input Files/GretCDF/Futures") %>% 
-  list.files() %>% str_remove(".rds$") ->
-  names(FutureFiles)
+# paste0("Iceberg Input Files/GretCDF/Futures") %>% 
+#   list.files(full.names = T) ->
+#   FutureFiles
+# 
+# paste0("Iceberg Input Files/GretCDF/Futures") %>% 
+#   list.files() %>% str_remove(".rds$") ->
+#   names(FutureFiles)
 
 FutureCDFList <- list()
 
@@ -87,21 +145,25 @@ Panth1 %>% filter(hOrder == "Chiroptera") %>% pull(Sp) %>%
   BatSpecies
 
 CurrentFiles <- CurrentFiles[Species]
-FutureFiles <- FutureFiles[Species]
-
-PipelineReps <- LETTERS[1:4]
+# FutureFiles <- FutureFiles[Species]
 
 # Currents pipeline ####
 
 print("Currents!")
 
-if(file.exists("~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/CurrentsGridDF.rds")){
+if(file.exists("~/Albersnet/Iceberg Files/CHELSA/Output Files/CurrentsGridDF.rds")){
   
-  GridDF <- readRDS("~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/CurrentsGridDF.rds")
+  GridDF <- readRDS("~/Albersnet/Iceberg Files/CHELSA/Output Files/CurrentsGridDF.rds")
   
 } else{
   
-  Sharing <- AllMammaldf %>% dplyr::select(Sp, Sp2, starts_with("Sharing.Currents"))
+  SharingPairs <- #AllMammaldf %>% dplyr::select(Sp, Sp2, starts_with("Sharing.Currents"))
+    readRDS("Output Files/SpeciesPairs.rds")
+  
+  Sharing <- #AllMammaldf %>% dplyr::select(Sp, Sp2, starts_with("Sharing.Currents"))
+    readRDS("Output Files/CurrentSharing.rds")
+  
+  SharingValues <- SharingPairs %>% bind_cols(Sharing)
   
   # Importing GretCDFs ####
   
@@ -112,264 +174,492 @@ if(file.exists("~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/Currents
     as.data.frame() %>% 
     dplyr::select(X, Y, Climate, ClimateLandUse)
   
-  SubSharing <- Sharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
+  SubSharing <- SharingValues %>% filter(Sp %in% FocalSp | 
+                                           Sp2 %in% FocalSp)
   
-  GridDF[,paste0("Sharing.Currents",LETTERS[1:2])] <- cbind(
-    sum(SubSharing$Sharing.CurrentsA)*GridDF[,"ClimateLandUse"],
-    sum(SubSharing$Sharing.CurrentsB)*GridDF[,"Climate"]
+  GridDF[,c("Sharing.CLUCurrents",  "Sharing.CCurrents")] <- cbind(
+    
+    sum(SubSharing$Sharing.CLUCurrents)*GridDF[,"ClimateLandUse"],
+    
+    sum(SubSharing$Sharing.CCurrents)*GridDF[,"Climate"]
+    
   )
   
   for(a in 2:length(Species)){
     
     FocalSp = Species[a]
     
-    if(a %% 1000 == 0)  print(CurrentFiles[a])
+    if(a %% 100 == 0){
+      
+      print(CurrentFiles[a])
+      
+      (GridDF %>% ggplot(aes(X, Y, fill = Sharing.CLUCurrents)) + geom_tile() + coord_sf()) %>% 
+        plot
+      
+    }
     
-    SubGretCDF <- readRDS(CurrentFiles[[FocalSp]]) %>% as.matrix %>% as.data.frame()# %>% dplyr::select(Climate, ClimateLandUse)
+    SubGretCDF <- readRDS(CurrentFiles[[FocalSp]]) %>% 
+      as.matrix %>% as.data.frame()# %>% dplyr::select(Climate, ClimateLandUse)
     
-    SubSharing <- Sharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
+    SubSharing <- SharingValues %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
     
-    SubGretCDF[,paste0("Sharing.Currents",LETTERS[1:2])] <- cbind(
-      sum(SubSharing$Sharing.CurrentsA)*SubGretCDF[,"ClimateLandUse"],
-      sum(SubSharing$Sharing.CurrentsB)*SubGretCDF[,"Climate"]
+    SubGretCDF[,c("Sharing.CLUCurrents",  "Sharing.CCurrents")] <- cbind(
+      
+      sum(SubSharing$Sharing.CLUCurrents)*SubGretCDF[,"ClimateLandUse"],
+      
+      sum(SubSharing$Sharing.CCurrents)*SubGretCDF[,"Climate"]
+      
     )
     
-    GridDF[,c("Climate", "ClimateLandUse",paste0("Sharing.Currents",LETTERS[1:2]))] <- 
-      GridDF[,c("Climate", "ClimateLandUse",paste0("Sharing.Currents",LETTERS[1:2]))] + 
-      SubGretCDF[,c("Climate", "ClimateLandUse",paste0("Sharing.Currents",LETTERS[1:2]))]
+    GridDF[,c("Sharing.CLUCurrents",  "Sharing.CCurrents")] <- 
+      GridDF[,c("Sharing.CLUCurrents",  "Sharing.CCurrents")] + 
+      SubGretCDF[,c("Sharing.CLUCurrents",  "Sharing.CCurrents")]
     
   }
   
-  saveRDS(GridDF, file = "~/Albersnet/Iceberg Files/Climate1/Iceberg Output Files/CurrentsGridDF.rds")
+  saveRDS(GridDF, file = "~/Albersnet/Iceberg Files/CHELSA/Output Files/CurrentsGridDF.rds")
   
 }
+
+# stop()
 
 # Futures pipeline ####
 
 print("Futures!")
 
-FutureCDFList <- list()
+SharingPairs <- readRDS("Output Files/SpeciesPairs.rds")
 
-Sharing <- AllMammaldf %>% 
-  dplyr::select(Sp, Sp2, 
-                starts_with("Sharing.Futures"))
+Sharing <- "Output Files/Predictions" %>% dir_ls %>% 
+  map(~.x %>% readRDS %>% 
+        dplyr::select(starts_with("Sharing"))) %>% 
+  bind_cols()
 
-# Importing GretCDFs ####
+Rep <- PredReps[1]
 
-# Overall ####
+GCMs <- PredReps %>% str_split("[.]") %>% map_chr(2) %>% substr(1, 2) %>% unique %>% sort
 
-FocalSp = Species[1]
+FocalGCM <- GCMs[1]
 
-GridDF <- readRDS(FutureFiles[[FocalSp]]) %>% 
-  as.matrix %>% 
-  as.data.frame()
-
-FutureCDFList[[FocalSp]] <- GridDF %>% dplyr::select(X, Y, contains("Futures"), -starts_with("LandUse"))
-
-SubSharing <- Sharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
-
-for(x in 2:length(PredReps)){
+if(0){
   
-  GridDF[,paste0("Sharing.",PredReps[x],PipelineReps)] <- cbind(
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"A")]])*GridDF[,paste0("BufferClimateLandUse.", PredReps[x])],
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"B")]])*GridDF[,paste0("BufferClimate.", PredReps[x])],
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"C")]])*GridDF[,paste0("ClimateLandUse.", PredReps[x])],
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"D")]])*GridDF[,paste0("Climate.", PredReps[x])]
+  for(FocalGCM in GCMs[4]){
     
-  )
-}
-
-for(a in 2:length(Species)){
-  
-  FocalSp = Species[a]
-  
-  if(a %% 1000 == 0)  print(FutureFiles[a])
-  
-  SubGretCDF <- readRDS(FutureFiles[[FocalSp]]) %>% 
-    as.matrix %>% 
-    as.data.frame()
-  
-  FutureCDFList[[FocalSp]] <- 
-    SubGretCDF %>% 
-    dplyr::select(X, Y, contains("Futures"), -starts_with("LandUse"))
-  
-  SubSharing <- Sharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
-  
-  for(x in 2:length(PredReps)){
+    print(FocalGCM)
     
-    SubGretCDF[,paste0("Sharing.",PredReps[x],PipelineReps)] <- cbind(
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"A")]])*SubGretCDF[,paste0("BufferClimateLandUse.",PredReps[x])],
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"B")]])*SubGretCDF[,paste0("BufferClimate.",PredReps[x])],
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"C")]])*SubGretCDF[,paste0("ClimateLandUse.",PredReps[x])],
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"D")]])*SubGretCDF[,paste0("Climate.",PredReps[x])]
-    )
+    FutureCDFList <- list()
+    
+    paste0("Iceberg Input Files/GretCDF/", FocalGCM) %>%
+      list.files(full.names = T) ->
+      FutureFiles
+    
+    paste0("Iceberg Input Files/GretCDF/", FocalGCM) %>%
+      list.files() %>% str_remove(".rds$") ->
+      names(FutureFiles)
+    
+    PredReps2 <- PredReps[str_detect(PredReps, FocalGCM)]# %>% rev
+    
+    # for(FocalSp in Species){
+    #   
+    #   print(FocalSp)
+    #   
+    #   FutureCDFList[[FocalSp]] <-
+    #     readRDS(FutureFiles[[FocalSp]]) %>%
+    #     as.matrix %>%
+    #     as.data.frame() %>%
+    #     # dplyr::select(matches("Climate[.]"))# %>%
+    #     # dplyr::select(matches("^Climate"))# %>%
+    #     # dplyr::select(matches("^Climate[.]")) %>%
+    #     # dplyr::select(matches("^ClimateLandUse"))# %>%
+    #     dplyr::select(matches("BufferClimate[.]"))# %>%
+    #   # dplyr::select(matches("BufferClimateLandUse"))
+    #   
+    # }
+    
+    FutureCDFList <-
+      Species %>%
+      mclapply(function(FocalSp){
+        
+        readRDS(FutureFiles[[FocalSp]]) %>%
+          as.matrix %>%
+          as.data.frame() %>%
+          # dplyr::select(matches("Climate[.]"))# %>%
+          # dplyr::select(matches("^Climate"))# %>%
+          dplyr::select(matches("^Climate[.]"))# %>%
+        # dplyr::select(matches("^ClimateLandUse"))# %>%
+        # dplyr::select(matches("BufferClimate[.]"))# %>%
+        # dplyr::select(matches("BufferClimateLandUse"))
+        
+      }, mc.cores = CORES)
+    
+    print("mclapply done!")
+    
+    names(FutureCDFList) <- Species
+    
+    FutureCDFList %<>% 
+      map(function(a){
+        
+        a %>% 
+          rename_all(~str_replace_all(.x, c("BufferClimateLandUse" = "CLUD", 
+                                            "BufferClimate" = "CD", 
+                                            "ClimateLandUse" = "CLU",
+                                            "Climate" = "C")))
+        
+      })
+    
+    PredReps2 <- FutureCDFList[[1]] %>% names() %>% intersect(PredReps2)
+    
+    for(Rep in PredReps2){
+      
+      print(Rep)
+      
+      FocalSharing <- 
+        Sharing[,paste0("Sharing.", Rep)] %>% 
+        bind_cols(SharingPairs, Sharing = .)
+      
+      Pipeline <- Rep %>% str_split("[.]") %>% map_chr(1)
+      
+      # Importing GretCDFs ####
+      
+      if(!file.exists(paste0("Output Files/IntersectDFs/", Rep, ".NewIntersects.rds"))){
+        
+        print("New Encounters!")
+        
+        NewEncounters <- NewEncounterList[[Rep]]
+        
+        # CurrentsGridDF <- 
+        #   readRDS(CurrentFiles[[FocalSp]]) %>% 
+        #   as.matrix %>% 
+        #   as.data.frame() %>% 
+        #   dplyr::select(X, Y)
+        
+        FocalSp = Species[1]
+        
+        NewIntersectsManual <- 
+          readRDS(CurrentFiles[[FocalSp]]) %>% 
+          as.matrix %>% 
+          as.data.frame() %>% 
+          dplyr::select()
+        
+        FutureCDFList %>%
+          map(Rep) %>% 
+          bind_cols %>% as.data.frame() ->
+          ValueDF
+        
+        OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
+        NoBatOverlapSums <- NoBatOverlapSharingSums <- NoBatDeltaOverlapSharing <- rep(0, nrow(ValueDF))
+        
+        for(y in 1:nrow(NewEncounters)){
+          
+          if(y %% 50000==0) print(y)
+          
+          Sp1 <- NewEncounters[y, "Var1"]
+          Sp2 <- NewEncounters[y, "Var2"]
+          
+          SubSums <- as.numeric(rowSums(ValueDF[,c(Sp1,Sp2)])>1)
+          
+          OverlapSums <- OverlapSums + SubSums
+          # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+          
+          OverlapSharingSums <- OverlapSharingSums +
+            
+            SubSums*NewEncounters[y,  "value"]
+          
+          # DeltaOverlapSharing <- DeltaOverlapSharing +
+          #   
+          #   SubSums*NewEncounters[y, paste0("DeltaSharing.",Rep)]
+          
+          if(!Sp1%in%BatSpecies&!Sp2%in%BatSpecies){
+            
+            NoBatOverlapSums <- NoBatOverlapSums + SubSums
+            # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+            
+            NoBatOverlapSharingSums <- NoBatOverlapSharingSums +
+              
+              SubSums*NewEncounters[y, "value"]
+            
+            # NoBatDeltaOverlapSharing <- NoBatDeltaOverlapSharing +
+            #   
+            #   SubSums*NewEncounters[y, paste0("DeltaSharing.",Rep)]
+            
+            
+          }
+          
+        }
+        
+        NewIntersectsManual[,paste0("Overlap.", Rep)] <-
+          OverlapSums
+        
+        NewIntersectsManual[,paste0("OverlapSharing.", Rep)] <-
+          OverlapSharingSums
+        
+        # NewIntersectsManual[,paste0("DeltaOverlapSharing.",Rep)] <-
+        #   DeltaOverlapSharing
+        
+        NewIntersectsManual[,paste0("NoBatOverlap.", Rep)] <-
+          NoBatOverlapSums
+        
+        NewIntersectsManual[,paste0("NoBatOverlapSharing.", Rep)] <-
+          NoBatOverlapSharingSums
+        
+        # NewIntersectsManual[,paste0("NoBatDeltaOverlapSharing.",Rep)] <-
+        #   NoBatDeltaOverlapSharing
+        
+        saveRDS(NewIntersectsManual, 
+                file = paste0("Output Files/IntersectDFs/", Rep, ".NewIntersects.rds"))
+        
+      }
+    }
+    
+    rm(FutureCDFList)
     
   }
   
-  GridDF[,2:ncol(GridDF)] <- GridDF[,2:ncol(GridDF)] + SubGretCDF[,2:ncol(SubGretCDF)]
-  
 }
 
-saveRDS(GridDF, file = "Iceberg Output Files/FuturesGridDF.rds")
-
-# No bats ####
-
-print("No bats!")
-
-NBSpecies <- setdiff(Species, BatSpecies)
-
-FocalSp = NBSpecies[1]
-
-GridDF <- FutureCDFList[[FocalSp]] 
-
-SubSharing <- Sharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
-
-for(x in 2:length(PredReps)){
+for(FocalGCM in rev(GCMs)){
   
-  GridDF[,paste0("Sharing.",PredReps[x],PipelineReps)] <- cbind(
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"A")]])*GridDF[,paste0("BufferClimateLandUse.",PredReps[x])],
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"B")]])*GridDF[,paste0("BufferClimate.",PredReps[x])],
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"C")]])*GridDF[,paste0("ClimateLandUse.",PredReps[x])],
-    sum(SubSharing[[paste0("Sharing.",PredReps[x],"D")]])*GridDF[,paste0("Climate.",PredReps[x])]
+  print(FocalGCM)
+  
+  FutureCDFList <- list()
+  
+  paste0("Iceberg Input Files/GretCDF/", FocalGCM) %>%
+    list.files(full.names = T) ->
+    FutureFiles
+  
+  paste0("Iceberg Input Files/GretCDF/", FocalGCM) %>%
+    list.files() %>% str_remove(".rds$") ->
+    names(FutureFiles)
+  
+  PredReps2 <- PredReps[str_detect(PredReps, FocalGCM)] %>% rev
+  
+  for(FocalSp in Species){
     
-  )
-}
-
-for(a in 2:length(NBSpecies)){
-  
-  FocalSp = NBSpecies[a]
-  
-  if(a %% 1000 == 0)  print(FutureFiles[a])
-  
-  SubGretCDF <- FutureCDFList[[FocalSp]]
-  
-  SubSharing <- Sharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp)
-  
-  for(x in 2:length(PredReps)){
+    print(FocalSp)
     
-    SubGretCDF[,paste0("Sharing.",PredReps[x],PipelineReps)] <- cbind(
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"A")]])*SubGretCDF[,paste0("BufferClimateLandUse.",PredReps[x])],
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"B")]])*SubGretCDF[,paste0("BufferClimate.",PredReps[x])],
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"C")]])*SubGretCDF[,paste0("ClimateLandUse.",PredReps[x])],
-      sum(SubSharing[[paste0("Sharing.",PredReps[x],"D")]])*SubGretCDF[,paste0("Climate.",PredReps[x])]
-    )
+    FutureCDFList[[FocalSp]] <- 
+      readRDS(FutureFiles[[FocalSp]]) %>% 
+      as.matrix %>% 
+      as.data.frame() %>% 
+      # dplyr::select(matches("^Climate[.]"))# %>%
+      # dplyr::select(matches("^ClimateLandUse"))# %>%
+      dplyr::select(matches("BufferClimate[.]"))# %>%
+    # dplyr::select(matches("BufferClimateLandUse"))
     
   }
   
-  GridDF[,2:ncol(GridDF)] <- GridDF[,2:ncol(GridDF)] + SubGretCDF[,2:ncol(SubGretCDF)]
-  
-}
-
-saveRDS(GridDF, file = "Iceberg Output Files/NoBatFuturesGridDF.rds")
-
-# NewEncounters ####
-
-print("New Encounters!")
-
-FutureCDFList <- list()
-
-for(i in Species){
-  
-  print(i)
-  
-  FutureCDFList[[i]] <- readRDS(FutureFiles[[i]]) %>% 
-    as.matrix %>% 
-    as.data.frame()
-  
-}
-
-FuturesBase <- c(A = "BufferClimateLandUse",
-                 B = "BufferClimate",
-                 C = "ClimateLandUse",
-                 D = "Climate")
-
-# NewIntersectsManual <- list()
-
-NewIntersectsManual <- FutureCDFList[[1]] %>% dplyr::select(X, Y)
-
-if(file.exists("Iceberg Output Files/NewIntersects.rds")){
-  
-  NewIntersectsManual <- readRDS("Iceberg Output Files/NewIntersects.rds")
-  
-  PipelineReps <- PipelineReps %>% setdiff(c("A", "B"))
-
-}
-
-for(Pipeline in PipelineReps){
-  
-  print(Pipeline)
-  
-  for(x in 2:length(PredReps)){
-    
-    print(PredReps[x])
-    
-    NewEncounters <- NewEncountersList[[Pipeline]][[PredReps[x]]]
-    
-    FutureCDFList %>%
-      map(paste0(FuturesBase[Pipeline], ".", PredReps[x])) %>% 
-      bind_cols %>% as.data.frame() ->
-      ValueDF
-    
-    OverlapSums <- OverlapSharingSums <- DeltaOverlapSharing <- rep(0, nrow(ValueDF))
-    NoBatOverlapSums <- NoBatOverlapSharingSums <- NoBatDeltaOverlapSharing <- rep(0, nrow(ValueDF))
-    
-    for(y in 1:nrow(NewEncounters)){
+  FutureCDFList %<>% 
+    map(function(a){
       
-      if(y %% 50000==0) print(y)
+      a %>% 
+        rename_all(~str_replace_all(.x, c("BufferClimateLandUse" = "CLUD", 
+                                          "BufferClimate" = "CD", 
+                                          "ClimateLandUse" = "CLU",
+                                          "Climate" = "C")))
+    })
+  
+  PredReps2 <- FutureCDFList[[1]] %>% names() %>% intersect(PredReps2)
+  
+  for(Rep in PredReps2){
+    
+    print(Rep)
+    
+    FocalSharing <- 
+      Sharing[,paste0("Sharing.", Rep)] %>% 
+      bind_cols(SharingPairs, Sharing = .)
+    
+    Pipeline <- Rep %>% str_split("[.]") %>% map_chr(1)
+    
+    # Overall ####
+    
+    if(!file.exists(paste0("Output Files/GridDFs/", Rep, ".GridDF.rds"))){
       
-      Sp1 <- NewEncounters[y,"Sp"]
-      Sp2 <- NewEncounters[y,"Sp2"]
+      FocalSp = Species[1]
       
-      SubSums <- as.numeric(rowSums(ValueDF[,c(Sp1,Sp2)])>1)
+      # GridDF <- readRDS(FutureFiles[[FocalSp]]) %>% 
+      #   as.matrix %>% 
+      #   as.data.frame()
+      # 
+      # FutureCDFList[[FocalSp]] <- GridDF# %>% dplyr::select(X, Y)
       
-      OverlapSums <- OverlapSums + SubSums
-      # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
+      CurrentsGridDF <- 
+        readRDS(CurrentFiles[[FocalSp]]) %>% 
+        as.matrix %>% 
+        as.data.frame() %>% 
+        dplyr::select(X, Y)
       
-      OverlapSharingSums <- OverlapSharingSums +
+      GridDF <- FutureCDFList[[FocalSp]] %>% 
+        dplyr::select(Rep) %>% 
+        bind_cols(CurrentsGridDF, .)
+      
+      SubSharing <- FocalSharing %>% 
+        filter(Sp%in%FocalSp|Sp2%in%FocalSp) %>% 
+        rename(Value = 3)
+      
+      GridDF[,paste0("Sharing.", Rep)] <- 
+        sum(SubSharing$Value)*GridDF[,Rep]
+      
+      for(a in 2:length(Species)){
         
-        SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
-      
-      DeltaOverlapSharing <- DeltaOverlapSharing +
+        FocalSp = Species[a]
         
-        SubSums*NewEncounters[y, paste0("DeltaSharing.",PredReps[x],Pipeline)]
-      
-      if(!Sp1%in%BatSpecies&!Sp2%in%BatSpecies){
-        
-        NoBatOverlapSums <- NoBatOverlapSums + SubSums
-        # SubSumList[[paste0(Sp1,".",Sp2)]] <- SubSums
-        
-        NoBatOverlapSharingSums <- NoBatOverlapSharingSums +
+        if(a %% 100 == 0){
           
-          SubSums*NewEncounters[y, paste0("Sharing.",PredReps[x],Pipeline)]
-        
-        NoBatDeltaOverlapSharing <- NoBatDeltaOverlapSharing +
+          print(FutureFiles[a])
           
-          SubSums*NewEncounters[y, paste0("DeltaSharing.",PredReps[x],Pipeline)]
+          # (GridDF %>% ggplot(aes(X, Y, fill = Sharing.CLUCurrents)) + geom_tile() + coord_sf()) %>% 
+          #   plot
+          
+        }
         
+        SubGretCDF <- FutureCDFList[[FocalSp]]
+        
+        SubSharing <- FocalSharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp) %>% 
+          rename(Value = 3)
+        
+        SubGretCDF[,paste0("Sharing.", Rep)] <- 
+          sum(SubSharing$Value)*SubGretCDF[,Rep]
+        
+        GridDF[,paste0("Sharing.", Rep)] <-
+          GridDF[,paste0("Sharing.", Rep)] +
+          SubGretCDF[,paste0("Sharing.", Rep)]
+        
+        GridDF[,Rep] <-
+          GridDF[,Rep] +
+          SubGretCDF[,Rep]
         
       }
       
+      saveRDS(GridDF, file = paste0("Output Files/GridDFs/", Rep, ".GridDF.rds"))
+      
     }
     
-    NewIntersectsManual[,paste0("Overlap.",PredReps[x],Pipeline)] <-
-      OverlapSums
+    # No bats ####
     
-    NewIntersectsManual[,paste0("OverlapSharing.",PredReps[x],Pipeline)] <-
-      OverlapSharingSums
-    
-    NewIntersectsManual[,paste0("DeltaOverlapSharing.",PredReps[x],Pipeline)] <-
-      DeltaOverlapSharing
-    
-    NewIntersectsManual[,paste0("NoBatOverlap.",PredReps[x],Pipeline)] <-
-      NoBatOverlapSums
-    
-    NewIntersectsManual[,paste0("NoBatOverlapSharing.",PredReps[x],Pipeline)] <-
-      NoBatOverlapSharingSums
-    
-    NewIntersectsManual[,paste0("NoBatDeltaOverlapSharing.",PredReps[x],Pipeline)] <-
-      NoBatDeltaOverlapSharing
-    
-    saveRDS(NewIntersectsManual, file = "Iceberg Output Files/NewIntersects.rds")
-    
+    if(!file.exists(paste0("Output Files/GridDFs/", Rep, ".GridDF_NB.rds"))){
+      
+      print("No bats!")
+      
+      NBSpecies <- setdiff(Species, BatSpecies)
+      
+      FocalSp = NBSpecies[1]
+      
+      CurrentsGridDF <- 
+        readRDS(CurrentFiles[[FocalSp]]) %>% 
+        as.matrix %>% 
+        as.data.frame() %>% 
+        dplyr::select(X, Y)
+      
+      GridDF <- FutureCDFList[[FocalSp]] %>% 
+        dplyr::select(Rep) %>% 
+        bind_cols(CurrentsGridDF, .)
+      
+      SubSharing <- FocalSharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp) %>% 
+        rename(Value = 3)
+      
+      GridDF[,paste0("Sharing.", Rep)] <- 
+        sum(SubSharing$Value)*GridDF[,Rep]
+      
+      for(a in 2:length(NBSpecies)){
+        
+        FocalSp = Species[a]
+        
+        if(a %% 100 == 0){
+          
+          print(FutureFiles[a])
+          
+          # (GridDF %>% ggplot(aes(X, Y, fill = Sharing.CLUCurrents)) + geom_tile() + coord_sf()) %>% 
+          #   plot
+          
+        }
+        
+        SubGretCDF <- FutureCDFList[[FocalSp]]
+        
+        SubSharing <- FocalSharing %>% filter(Sp%in%FocalSp|Sp2%in%FocalSp) %>% 
+          rename(Value = 3)
+        
+        SubGretCDF[,paste0("Sharing.", Rep)] <- 
+          sum(SubSharing$Value)*SubGretCDF[,Rep]
+        
+        GridDF[,paste0("Sharing.", Rep)] <-
+          GridDF[,paste0("Sharing.", Rep)] +
+          SubGretCDF[,paste0("Sharing.", Rep)]
+        
+        GridDF[,Rep] <-
+          GridDF[,Rep] +
+          SubGretCDF[,Rep]
+        
+      }
+      
+      saveRDS(GridDF, file = paste0("Output Files/GridDFs/", Rep, ".GridDF_NB.rds"))
+      
+    }
   }
+  
+  rm(FutureCDFList)
+  
 }
+
+stop()
+
+FileList <- 
+  "Iceberg Files/CHELSA/Output Files/IntersectDFs" %>% 
+  dir_ls
+
+# c("C", "CD", "CLU", "CLUD") %>% 
+#   extract(3:4) %>% 
+#   map(function(a){
+#     
+#     FileList[FileList %>% 
+#       str_split("[.]") %>% 
+#       map_chr(1) %>% 
+#       str_split("/") %>% 
+#       map_chr(last) == a] %>% 
+#       map(readRDS) %>% 
+#       reduce(full_join)
+#     
+#   })
+
+FullDF <- 
+  FileList %>% 
+  map(readRDS) %>% 
+  bind_cols()
+
+CurrentsGridDF <- 
+  readRDS(CurrentFiles[[1]]) %>% 
+  as.matrix %>% 
+  as.data.frame() %>% 
+  dplyr::select(X, Y)
+
+
+
+FullDF %>% 
+  bind_cols(CurrentsGridDF) %>% 
+  gather("Key", "Value", 
+         -c(X:Y)) %>% 
+  separate("Key", sep = "[.]",
+           into = c("Variable",
+                    "Pipeline", 
+                    "Rep")) %>% 
+  mutate(GCM = substr(Rep, 1, 2),
+         RCP = substr(Rep, 3, 4),
+         Year = substr(Rep, 5, 6)) %>% 
+  group_by(Pipeline, 
+           RCP, 
+           Year) %>% 
+  summarise_at("Value", ~mean(.x, na.rm = T))
+
+
+
+
+FullDF %>% 
+  dplyr::select()
+
+"Output Files/GridDFs" %>% 
+  list.files %>% str_split("[.]") %>% 
+  map_chr(1) %>% table
+
+"Output Files/IntersectDFs" %>% 
+  list.files %>% str_split("[.]") %>% 
+  map_chr(1) %>% 
+  table
+

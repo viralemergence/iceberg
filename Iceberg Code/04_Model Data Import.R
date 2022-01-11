@@ -4,6 +4,9 @@
 
 library(igraph); library(magrittr); library(dplyr); library(ggplot2); require(RCurl); library(readr);
 library(tidyverse); library(Matrix); library(parallel); library(mgcv); library(cowplot)
+library(fs)
+
+setwd(here::here())
 
 # FullRangeAdj <- IcebergAdjList$Currents
 FullRangeAdj <- CurrentsRangeAdjA <-  
