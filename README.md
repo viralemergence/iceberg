@@ -1,12 +1,8 @@
 ![banner](https://github.com/cjcarlson/iceberg/blob/master/Banner.png)
 
-# Iceberg
+# Climate change increases cross-species viral transmission risk
 
-## Carlson, Albery, et al.: Climate change will drive novel cross-species viral transmission
-
-This repo relates to this preprint: https://www.biorxiv.org/content/10.1101/2020.01.24.918755v1
-
-We ask the question: how might climate change drive mammal species to shift their ranges, giving viruses opportunities to jump into new species?
+In this study we ask: how might climate change drive mammal species to shift their ranges, giving viruses opportunities to jump into new species?
 
 The study can be separated into two conceptual and practical stages: generating and processing species distribution models (SDMs) for the present and the future, and then using them to predict how they will alter viral ecology as a result of climate change.
 
