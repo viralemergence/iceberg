@@ -1,6 +1,6 @@
 ![banner](https://github.com/cjcarlson/iceberg/blob/master/Banner.png)
 
-# Climate change increases cross-species viral transmission risk
+## Climate change increases cross-species viral transmission risk
 
 In this study we ask: how might climate change drive mammal species to shift their ranges, giving viruses opportunities to jump into new species?
 
