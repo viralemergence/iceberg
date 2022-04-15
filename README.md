@@ -1,4 +1,5 @@
 ![banner](https://github.com/cjcarlson/iceberg/blob/master/Banner.png)
+[![DOI](https://zenodo.org/badge/182118137.svg)](https://zenodo.org/badge/latestdoi/182118137)
 
 ## Climate change increases cross-species viral transmission risk
 
